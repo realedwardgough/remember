@@ -1,0 +1,23 @@
+{
+    "id": "/",
+    "name": "Remember",
+    "short_name": "Remember",
+    "description": "A private family timeline for preserving memories.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#fff9e8",
+    "theme_color": "#e06573",
+    "icons": [
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "166x166",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}

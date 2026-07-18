@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Remember</title>
+  <rect x="10" y="10" width="104" height="104" rx="8" fill="#18181b"/>
+  <rect x="4" y="4" width="104" height="104" rx="8" fill="#e06573" stroke="#18181b" stroke-width="8"/>
+  <path d="M35 91V27h29c17 0 28 9 28 24 0 10-5 18-14 22l18 18H76L61 76h-8v15H35Zm18-32h10c7 0 11-3 11-9 0-5-4-8-11-8H53v17Z" fill="#fff9e8" stroke="#18181b" stroke-width="3" stroke-linejoin="round"/>
+</svg>
