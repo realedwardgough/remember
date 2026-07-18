@@ -12,6 +12,42 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * @property int $id
+ * @property int $post_id
+ * @property string $disk
+ * @property string $path
+ * @property string|null $thumbnail_path
+ * @property string|null $original_name
+ * @property string $mime_type
+ * @property int $size
+ * @property int|null $width
+ * @property int|null $height
+ * @property array<array-key, mixed>|null $metadata
+ * @property int $sort_order
+ * @property \Carbon\CarbonImmutable|null $created_at
+ * @property \Carbon\CarbonImmutable|null $updated_at
+ * @property-read \App\Models\Post|null $post
+ * @method static \Database\Factories\MediaFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereDisk($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereHeight($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereMimeType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereOriginalName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media wherePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media wherePostId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereSortOrder($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereThumbnailPath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereWidth($value)
+ * @mixin \Eloquent
+ */
 #[Fillable([
     'post_id',
     'disk',
@@ -44,12 +80,12 @@ class Media extends Model
 
     public function post(): BelongsTo
     {
-        return $this->belongsTo(Post::class);
+        return $this->belongsTo(related: Post::class);
     }
 
     public function isImage(): bool
     {
-        return str_starts_with($this->mime_type, 'image/');
+        return str_starts_with(haystack: $this->mime_type, needle: 'image/');
     }
 
     /**

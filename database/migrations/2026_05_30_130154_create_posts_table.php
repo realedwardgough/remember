@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enum\TimelinePostType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
