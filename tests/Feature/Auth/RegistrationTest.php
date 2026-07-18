@@ -3,6 +3,8 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\RegistrationInvite;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,6 +21,8 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register_with_an_invite(): void
     {
+        $this->seed(RoleSeeder::class);
+
         $token = $this->createInviteToken('invited-member');
 
         $response = $this->post(route('register.store'), [
@@ -31,6 +35,9 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('home', absolute: false));
+        $user = User::query()->sole();
+        $this->assertTrue($user->hasRole('user'));
+        $this->assertFalse($user->hasRole('admin'));
 
         $this->assertDatabaseHas('users', [
             'name' => 'Member',
