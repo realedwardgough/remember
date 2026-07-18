@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'username'])]
 #[Hidden(['password', 'remember_token'])]
@@ -17,6 +18,7 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory;
+    use HasRoles;
     use Notifiable;
 
     public function posts(): HasMany
@@ -34,11 +36,7 @@ class User extends Authenticatable
         return $this->hasMany(Heart::class);
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [

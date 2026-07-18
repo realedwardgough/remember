@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Timeline;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -25,6 +26,8 @@ class SetupTest extends TestCase
 
     public function test_setup_creates_the_timeline_and_first_user(): void
     {
+        $this->seed(RoleSeeder::class);
+
         $response = $this->post(route('setup.store'), $this->validSetupData());
 
         $timeline = Timeline::query()->sole();
@@ -39,6 +42,8 @@ class SetupTest extends TestCase
         $this->assertSame('alex', $user->username);
         $this->assertSame('alex@example.com', $user->email);
         $this->assertTrue(Hash::check('password', $user->password));
+        $this->assertTrue($user->hasRole('admin'));
+        $this->assertFalse($user->hasRole('user'));
     }
 
     public function test_setup_validates_timeline_and_account_details(): void
