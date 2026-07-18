@@ -17,8 +17,8 @@
                     >Remember</span
                 >
                 <span
-                    class="text-xs font-black tracking-[0.2em] text-zinc-700 uppercase"
-                    >Timeline</span
+                    class="max-w-44 truncate text-xs font-black tracking-[0.2em] text-zinc-700 uppercase"
+                    >{{ timeline.name }}</span
                 >
             </Link>
             <span
@@ -374,6 +374,7 @@ const emit = defineEmits<{
 const page = usePage<PageProps>();
 
 const version = computed(() => page.props.version);
+const timeline = computed(() => page.props.timeline);
 const family = computed(() => page.props.family);
 const filters = computed(() => page.props.filters);
 const tags = computed(() => page.props.tags);

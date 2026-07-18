@@ -6,6 +6,7 @@ use App\Enum\TimelinePostType;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\Timeline;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -13,41 +14,22 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function share(Request $request): array
     {
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'version' => config('app.version'),
-            'auth' => [
-                'user' => $request->user(),
-            ],
+            'timeline' => fn (): array => $this->timeline(),
+            'auth' => ['user' => $request->user()],
             'filters' => fn (): array => $this->filters($request),
             'postTypes' => fn (): array => array_map(
                 static fn (TimelinePostType $type): string => $type->value,
@@ -77,9 +59,18 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    /**
-     * @return array{search: string, tag: string, type: string, author: string}
-     */
+    /** @return array{name: string, description: ?string} */
+    private function timeline(): array
+    {
+        $timeline = Timeline::query()->first();
+
+        return [
+            'name' => $timeline?->name ?? (string) config('app.name'),
+            'description' => $timeline?->description,
+        ];
+    }
+
+    /** @return array{search: string, tag: string, type: string, author: string} */
     private function filters(Request $request): array
     {
         $type = $request->string('type')->trim()->toString();
@@ -92,23 +83,21 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    /**
-     * @return array<string, array{name: string, username: string, photo: string}>
-     */
+    /** @return array<string, array{name: string, username: string, photo: string}> */
     private function family(): array
     {
         return User::query()
-            ->orderBy(column: "name")
-            ->limit(value: 5)
+            ->orderBy('name')
+            ->limit(5)
             ->get()
-            ->mapWithKeys(callback: function (User $user): array {
-                $firstName = explode(separator: " ", string: $user->name)[0] ?? "Family Member";
+            ->mapWithKeys(function (User $user): array {
+                $firstName = str($user->name)->before(' ')->value() ?: 'Family Member';
 
                 return [
                     $firstName => [
-                        "name" => $user->name,
-                        "username" => "@".$user->username,
-                        "photo" => $user->photo ?? "",
+                        'name' => $user->name,
+                        'username' => '@'.$user->username,
+                        'photo' => $user->photo ?? '',
                     ],
                 ];
             })

@@ -7,7 +7,7 @@
             />
         </template>
 
-        <Head title="Timeline" />
+        <Head :title="timeline.name" />
 
         <section class="grid content-start gap-8">
             <header
@@ -16,7 +16,7 @@
                 <p
                     class="relative z-10 w-fit -rotate-1 border-3 border-zinc-950 bg-[#f8cc5d] px-3 py-1.5 text-xs font-black tracking-[0.24em] text-zinc-950 uppercase shadow-[4px_4px_0_0_#18181b]"
                 >
-                    Remember
+                    {{ timeline.name }}
                 </p>
                 <div
                     class="relative z-10 mt-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
@@ -30,9 +30,10 @@
                         <p
                             class="mt-4 max-w-xl text-sm leading-6 font-semibold text-zinc-950 sm:text-base"
                         >
-                            A visual wall of every memory, milestone and event
-                            preserved in your shared timeline, grouped naturally
-                            by upload date.
+                            {{
+                                timeline.description ||
+                                'A visual wall of every memory, milestone and event preserved in your shared timeline.'
+                            }}
                         </p>
                     </div>
                 </div>
@@ -194,6 +195,7 @@ import type {
 } from '@/types';
 
 const page = usePage<PageProps>();
+const timeline = computed(() => page.props.timeline);
 
 const family_count = computed(() => page.props.family_count);
 const media_count = computed(() => page.props.media_count);

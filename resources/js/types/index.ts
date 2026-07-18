@@ -79,6 +79,7 @@ export interface Family {
 
 export interface PageProps extends InertiaPageProps {
     family: Record<string, Family>;
+    timeline: { name: string; description: string | null };
     filters: TimelineFilters;
     postTypes: TimelinePostType[];
     tags: string[];
