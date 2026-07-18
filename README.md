@@ -21,6 +21,7 @@
 - Search and filtering by post type, family member and hashtag
 - A gallery with full-size image previews and downloads
 - Invitation-only account registration
+- Seeded `admin` and `user` roles powered by Spatie Laravel Permission
 - A one-time browser setup flow for naming the timeline and creating its first account
 - Responsive desktop and mobile navigation
 - Installable web-app metadata and safe-area-aware mobile styling
@@ -65,6 +66,7 @@
 
 - PHP 8.4 and Laravel 13
 - Laravel Fortify for authentication
+- Spatie Laravel Permission for roles and future authorization rules
 - Inertia.js 3 and Vue 3
 - Tailwind CSS 4
 - Laravel Wayfinder for typed frontend routes
@@ -188,7 +190,7 @@ php artisan media:verify-storage
 ### 5. Create the database and frontend build
 
 ```bash
-php artisan migrate
+php artisan migrate --seed
 npm run build
 ```
 
@@ -219,7 +221,7 @@ Open `/setup` in the browser—for example, `https://remember.test/setup`—and 
 - The first user's name, username and email address
 - A secure password
 
-The timeline and first account are created together, and the first user is signed in immediately. After setup succeeds, both setup endpoints return a 404 and cannot be used again.
+The timeline and first account are created together, and the first user is signed in immediately. After setup succeeds, both setup endpoints return a 404 and cannot be used again. The first account receives the `admin` role; accounts created later through invitation links receive the `user` role.
 
 ## Inviting family members
 
@@ -230,6 +232,8 @@ php artisan users:create family-member
 ```
 
 The command prints a registration URL. `APP_URL` must be correct before generating links. Each invitation reserves its username and is invalidated after use.
+
+The `RoleSeeder` is idempotent and creates the `admin` and `user` roles. Existing installations can run `php artisan db:seed --class=RoleSeeder --force` to add any missing roles; it deliberately does not guess which existing account should become an administrator.
 
 ## Development checks
 

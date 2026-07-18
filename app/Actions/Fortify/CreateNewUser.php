@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
+use App\Enum\UserRole;
 use App\Models\RegistrationInvite;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -16,8 +17,6 @@ class CreateNewUser implements CreatesNewUsers
     use PasswordValidationRules;
 
     /**
-     * Validate and create a newly registered user.
-     *
      * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
@@ -51,6 +50,8 @@ class CreateNewUser implements CreatesNewUsers
                 'email' => $input['email'],
                 'password' => $input['password'],
             ]);
+
+            $user->assignRole(UserRole::USER->value);
 
             $invite->forceFill([
                 'accepted_by' => $user->id,

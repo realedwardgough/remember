@@ -2,6 +2,7 @@
 
 namespace App\Actions\Setup;
 
+use App\Enum\UserRole;
 use App\Models\Timeline;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -22,12 +23,16 @@ class CreateTimeline
                 'setup_completed_at' => now(),
             ]);
 
-            return User::query()->create([
+            $user = User::query()->create([
                 'name' => $input['name'],
                 'username' => $input['username'],
                 'email' => $input['email'],
                 'password' => $input['password'],
             ]);
+
+            $user->assignRole(UserRole::ADMIN->value);
+
+            return $user;
         }, attempts: 3);
     }
 }
