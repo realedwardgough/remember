@@ -4,21 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_guests_are_redirected_to_the_login_page()
+    #[Test]
+    public function guests_are_redirected_to_the_login_page(): void
     {
         $response = $this->get(route('home'));
         $response->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_users_can_visit_the_timeline()
+    #[Test]
+    public function authenticated_users_can_visit_the_timeline(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);

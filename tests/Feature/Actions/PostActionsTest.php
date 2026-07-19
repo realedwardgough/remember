@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Actions;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Actions\CreatePost;
 use App\Actions\UpdatePost;
 use App\DTOs\PostData;
 use App\Enum\TimelinePostType;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class PostActionsTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_create_post_returns_a_post_and_persists_normalized_content_and_tags(): void
+    #[Test]
+    public function create_post_returns_a_post_and_persists_normalized_content_and_tags(): void
     {
         $post = app(CreatePost::class)->handle(
             User::factory()->create(),
@@ -29,9 +31,10 @@ class PostActionsTest extends TestCase
         $this->assertSame(['family'], $post->tags->pluck('name')->all());
     }
 
-    public function test_update_post_returns_the_updated_post_and_replaces_tags(): void
+    #[Test]
+    public function update_post_returns_the_updated_post_and_replaces_tags(): void
     {
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $updated = app(UpdatePost::class)->handle(
             $post,

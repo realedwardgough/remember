@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\Timeline;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class SetupTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_setup_page_is_available_for_a_fresh_installation(): void
+    #[Test]
+    public function setup_page_is_available_for_a_fresh_installation(): void
     {
         $this->get(route('setup.show'))
             ->assertOk()
@@ -26,7 +28,8 @@ class SetupTest extends TestCase
                 ->where('timeline.description', null));
     }
 
-    public function test_setup_creates_the_timeline_and_first_user(): void
+    #[Test]
+    public function setup_creates_the_timeline_and_first_user(): void
     {
         $this->seed(RoleSeeder::class);
 
@@ -48,7 +51,8 @@ class SetupTest extends TestCase
         $this->assertFalse($user->hasRole('user'));
     }
 
-    public function test_setup_validates_timeline_and_account_details(): void
+    #[Test]
+    public function setup_validates_timeline_and_account_details(): void
     {
         $this->post(route('setup.store'), [
             'timeline_name' => '',
@@ -72,7 +76,8 @@ class SetupTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_setup_routes_are_not_available_after_setup_is_complete(): void
+    #[Test]
+    public function setup_routes_are_not_available_after_setup_is_complete(): void
     {
         Timeline::factory()->create();
 
@@ -81,7 +86,8 @@ class SetupTest extends TestCase
         $this->assertDatabaseEmpty('users');
     }
 
-    public function test_existing_installations_cannot_access_setup(): void
+    #[Test]
+    public function existing_installations_cannot_access_setup(): void
     {
         User::factory()->create();
 

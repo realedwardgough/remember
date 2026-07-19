@@ -4,24 +4,26 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Enum\TimelinePostType;
 use App\Models\Comment;
 use App\Models\CommentHeart;
 use App\Models\Heart;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class CommentAndHeartTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_authenticated_users_can_comment_on_posts(): void
+    #[Test]
+    public function authenticated_users_can_comment_on_posts(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $this
             ->actingAs($user)
@@ -37,10 +39,11 @@ class CommentAndHeartTest extends TestCase
         $this->assertSame('This is such a lovely update.', $comment->content);
     }
 
-    public function test_comments_require_content(): void
+    #[Test]
+    public function comments_require_content(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $this
             ->actingAs($user)
@@ -50,10 +53,11 @@ class CommentAndHeartTest extends TestCase
             ->assertSessionHasErrors('content');
     }
 
-    public function test_authenticated_users_can_toggle_a_post_heart(): void
+    #[Test]
+    public function authenticated_users_can_toggle_a_post_heart(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $this
             ->actingAs($user)
@@ -77,10 +81,11 @@ class CommentAndHeartTest extends TestCase
     }
 
 
-    public function test_authenticated_users_can_toggle_a_comment_heart(): void
+    #[Test]
+    public function authenticated_users_can_toggle_a_comment_heart(): void
     {
         $user = User::factory()->create();
-        $comment = Comment::factory()->for(Post::factory()->state(['post_type' => TimelinePostType::MEMORY]))->create();
+        $comment = Comment::factory()->for(Post::factory()->memory())->create();
 
         $this
             ->actingAs($user)
@@ -103,7 +108,8 @@ class CommentAndHeartTest extends TestCase
         ]);
     }
 
-    public function test_home_feed_includes_comments_and_heart_state(): void
+    #[Test]
+    public function home_feed_includes_comments_and_heart_state(): void
     {
         $viewer = User::factory()->create(['username' => 'viewer']);
         $commenter = User::factory()->create(['username' => 'author-one']);
@@ -156,9 +162,10 @@ class CommentAndHeartTest extends TestCase
             );
     }
 
-    public function test_guests_cannot_comment_or_heart_posts(): void
+    #[Test]
+    public function guests_cannot_comment_or_heart_posts(): void
     {
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $this
             ->post(route('posts.comments.store', $post), ['content' => 'Hello'])
@@ -175,7 +182,8 @@ class CommentAndHeartTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_private_letters_reject_comment_and_heart_endpoints(): void
+    #[Test]
+    public function private_letters_reject_comment_and_heart_endpoints(): void
     {
         $user = User::factory()->create();
         $letter = Post::factory()->create([

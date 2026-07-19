@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Enum\TimelinePostType;
 use App\Http\Resources\TimelineResource;
 use App\Models\Comment;
@@ -13,14 +14,15 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class TimelineResourceTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_it_matches_the_home_timeline_payload_shape(): void
+    #[Test]
+    public function it_matches_the_home_timeline_payload_shape(): void
     {
         $viewer = User::factory()->create();
         $author = User::factory()->create(['username' => 'author-one']);

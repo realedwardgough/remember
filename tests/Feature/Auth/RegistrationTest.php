@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\RegistrationInvite;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_registration_screen_is_not_available(): void
+    #[Test]
+    public function registration_screen_is_not_available(): void
     {
         $this
             ->get('/register')
             ->assertNotFound();
     }
 
-    public function test_new_users_can_register_with_an_invite(): void
+    #[Test]
+    public function new_users_can_register_with_an_invite(): void
     {
         $this->seed(RoleSeeder::class);
 
@@ -48,7 +51,8 @@ class RegistrationTest extends TestCase
         ]);
     }
 
-    public function test_new_users_cannot_register_without_an_invite(): void
+    #[Test]
+    public function new_users_cannot_register_without_an_invite(): void
     {
         $this
             ->post(route('register.store'), [

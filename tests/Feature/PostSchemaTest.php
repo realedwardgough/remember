@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class PostSchemaTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_posts_table_matches_timeline_post_data(): void
+    #[Test]
+    public function posts_table_matches_timeline_post_data(): void
     {
         $this->assertTrue(Schema::hasColumns('posts', [
             'id',
@@ -27,7 +29,8 @@ class PostSchemaTest extends TestCase
         ]));
     }
 
-    public function test_media_table_supports_multiple_files_per_post(): void
+    #[Test]
+    public function media_table_supports_multiple_files_per_post(): void
     {
         $this->assertTrue(Schema::hasColumns('media', [
             'id',
@@ -47,7 +50,8 @@ class PostSchemaTest extends TestCase
         ]));
     }
 
-    public function test_tags_table_supports_reusable_post_tags(): void
+    #[Test]
+    public function tags_table_supports_reusable_post_tags(): void
     {
         $this->assertTrue(Schema::hasColumns('tags', [
             'id',
@@ -65,7 +69,8 @@ class PostSchemaTest extends TestCase
         ]));
     }
 
-    public function test_comments_and_hearts_tables_support_post_engagement(): void
+    #[Test]
+    public function comments_and_hearts_tables_support_post_engagement(): void
     {
         $this->assertTrue(Schema::hasColumns('comments', [
             'id',

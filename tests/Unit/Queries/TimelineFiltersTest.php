@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Queries;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\DTOs\TimelineFiltersDTO;
 use App\Enum\TimelinePostType;
 use PHPUnit\Framework\TestCase;
 
 class TimelineFiltersTest extends TestCase
 {
-    public function test_it_normalizes_supported_timeline_filters(): void
+    #[Test]
+    public function it_normalizes_supported_timeline_filters(): void
     {
         $filters = TimelineFiltersDTO::fromArray([
             'search' => '  First day ',
@@ -27,7 +29,8 @@ class TimelineFiltersTest extends TestCase
         ], $filters->toArray());
     }
 
-    public function test_it_discards_an_unknown_post_type(): void
+    #[Test]
+    public function it_discards_an_unknown_post_type(): void
     {
         $this->assertSame('', TimelineFiltersDTO::fromArray(['type' => 'unknown'])->type);
     }

@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Settings;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_profile_page_is_displayed(): void
+    #[Test]
+    public function profile_page_is_displayed(): void
     {
         $user = User::factory()->create();
 
@@ -24,7 +26,8 @@ class ProfileUpdateTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Profile'));
     }
 
-    public function test_profile_information_can_be_updated(): void
+    #[Test]
+    public function profile_information_can_be_updated(): void
     {
         $user = User::factory()->create([
             'name' => 'Alex Morgan',
@@ -46,7 +49,8 @@ class ProfileUpdateTest extends TestCase
         $this->assertSame('alex.morgan@example.com', $user->email);
     }
 
-    public function test_profile_email_must_be_unique(): void
+    #[Test]
+    public function profile_email_must_be_unique(): void
     {
         User::factory()->create(['email' => 'taken@example.com']);
         $user = User::factory()->create(['email' => 'alex@example.com']);
@@ -64,7 +68,8 @@ class ProfileUpdateTest extends TestCase
         $this->assertSame('alex@example.com', $user->refresh()->email);
     }
 
-    public function test_guests_cannot_view_the_profile_page(): void
+    #[Test]
+    public function guests_cannot_view_the_profile_page(): void
     {
         $this
             ->get(route('profile.edit'))

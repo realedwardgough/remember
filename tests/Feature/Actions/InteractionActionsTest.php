@@ -4,27 +4,28 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Actions;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Actions\CreateComment;
 use App\Actions\ToggleCommentHeart;
 use App\Actions\TogglePostHeart;
 use App\DTOs\CreateCommentDTO;
 use App\DTOs\ToggleHeartResultDTO;
-use App\Enum\TimelinePostType;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class InteractionActionsTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_create_comment_returns_the_created_comment(): void
+    #[Test]
+    public function create_comment_returns_the_created_comment(): void
     {
         $author = User::factory()->create();
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
 
         $comment = (new CreateComment)->handle(
             $post,
@@ -37,10 +38,11 @@ class InteractionActionsTest extends TestCase
         $this->assertSame('A lovely memory.', $comment->content);
     }
 
-    public function test_post_heart_action_returns_typed_results_for_both_states(): void
+    #[Test]
+    public function post_heart_action_returns_typed_results_for_both_states(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
+        $post = Post::factory()->memory()->create();
         $action = new TogglePostHeart;
 
         $added = $action->handle($post, $user);
@@ -54,10 +56,11 @@ class InteractionActionsTest extends TestCase
         $this->assertNull($removed->heartId);
     }
 
-    public function test_comment_heart_action_returns_typed_results_for_both_states(): void
+    #[Test]
+    public function comment_heart_action_returns_typed_results_for_both_states(): void
     {
         $user = User::factory()->create();
-        $comment = Comment::factory()->for(Post::factory()->state(['post_type' => TimelinePostType::MEMORY]))->create();
+        $comment = Comment::factory()->for(Post::factory()->memory())->create();
         $action = new ToggleCommentHeart;
 
         $added = $action->handle($comment, $user);
@@ -69,10 +72,11 @@ class InteractionActionsTest extends TestCase
         $this->assertFalse($removed->hearted);
     }
 
-    public function test_private_letters_reject_interaction_actions(): void
+    #[Test]
+    public function private_letters_reject_interaction_actions(): void
     {
         $user = User::factory()->create();
-        $letter = Post::factory()->create(['post_type' => TimelinePostType::LETTER]);
+        $letter = Post::factory()->letter()->create();
 
         try {
             (new CreateComment)->handle(
@@ -89,10 +93,11 @@ class InteractionActionsTest extends TestCase
         (new TogglePostHeart)->handle($letter, $user);
     }
 
-    public function test_comments_belonging_to_private_letters_cannot_be_hearted(): void
+    #[Test]
+    public function comments_belonging_to_private_letters_cannot_be_hearted(): void
     {
         $user = User::factory()->create();
-        $letter = Post::factory()->create(['post_type' => TimelinePostType::LETTER]);
+        $letter = Post::factory()->letter()->create();
         $comment = Comment::factory()->for($letter)->create();
 
         $this->expectException(AuthorizationException::class);
