@@ -22,6 +22,11 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 /auth.json
+/.agents
+/.codex
+/AGENTS.md
+/boost.json
+/_ide_helper.php
 /.fleet
 /.idea
 /.nova
