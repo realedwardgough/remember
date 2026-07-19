@@ -21,9 +21,9 @@ class DashboardTest extends TestCase
     }
 
     #[Test]
-    public function authenticated_users_can_visit_the_timeline(): void
+    public function authenticated_users_can_visit_the_timeline_without_email_verification(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['email_verified_at' => null]);
         $this->actingAs($user);
 
         $manifest = json_decode(
