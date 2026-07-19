@@ -22,6 +22,8 @@
 - A gallery with full-size image previews and downloads
 - Invitation-only account registration
 - Seeded `admin` and `user` roles powered by Spatie Laravel Permission
+- An admin management area for timeline details, invitations, roles and members
+- Reusable pending invitation URLs stored encrypted at rest
 - A one-time browser setup flow for naming the timeline and creating its first account
 - Responsive desktop and mobile navigation
 - Installable web-app metadata and safe-area-aware mobile styling
@@ -57,7 +59,7 @@
     <td colspan="2">
       <img src="public/images/examples/register-invite-screen.png" alt="Invitation-only registration screen">
       <br><strong>Keep the timeline private</strong><br>
-      New family members join through single-use invitation links generated from the application console.
+      New family members join through single-use invitation links created by an administrator or from the application console.
     </td>
   </tr>
 </table>
@@ -223,9 +225,23 @@ Open `/setup` in the browser—for example, `https://remember.test/setup`—and 
 
 The timeline and first account are created together, and the first user is signed in immediately. After setup succeeds, both setup endpoints return a 404 and cannot be used again. The first account receives the `admin` role; accounts created later through invitation links receive the `user` role.
 
+## Managing the timeline
+
+Administrators can open **Manage timeline** from the account page. The management area allows them to:
+
+- Update the timeline name and description
+- Create invitation links and copy them again while they remain pending
+- Generate a replacement URL for invitations created before reusable links were introduced
+- Promote members to administrator or return them to the standard user role
+- Remove accounts while preserving their posts and comments as anonymous history
+
+The application prevents administrators from removing their own account or removing or demoting the final administrator. Destructive actions use an in-application confirmation dialog before they are submitted.
+
+Invitation tokens are stored encrypted at rest, while a one-way hash is used to validate registration requests. Generating a replacement invitation URL invalidates the previous link.
+
 ## Inviting family members
 
-Registration is invitation-only. Create a single-use invitation URL with:
+Registration is invitation-only. Administrators can create and manage invitations from the timeline management area. A single-use invitation URL can also be created from the command line with:
 
 ```bash
 php artisan users:create family-member
@@ -233,7 +249,38 @@ php artisan users:create family-member
 
 The command prints a registration URL. `APP_URL` must be correct before generating links. Each invitation reserves its username and is invalidated after use.
 
-The `RoleSeeder` is idempotent and creates the `admin` and `user` roles. Existing installations can run `php artisan db:seed --class=RoleSeeder --force` to add any missing roles; it deliberately does not guess which existing account should become an administrator.
+### Assigning roles from the command line
+
+Existing installations can assign their first administrator by username or email address:
+
+```bash
+php artisan users:role family-member admin
+php artisan users:role family@example.com admin
+```
+
+The role defaults to `admin` when omitted. The same command can assign the standard role:
+
+```bash
+php artisan users:role family-member user
+```
+
+The final administrator cannot be demoted, including through the command.
+
+The `RoleSeeder` is idempotent and creates the `admin` and `user` roles. Existing installations can run `php artisan db:seed --class=RoleSeeder --force` to add missing roles, then use `users:role` to select an administrator explicitly.
+
+## Updating an existing installation
+
+After pulling a newer version, install dependencies, run migrations and rebuild the frontend:
+
+```bash
+composer install --no-interaction --prefer-dist --optimize-autoloader
+php artisan migrate --force
+npm install
+npm run build
+php artisan optimize
+```
+
+Older installations without a row in the `timelines` table are initialized automatically when an administrator first opens timeline management. Older pending invitations cannot reveal their original one-way token; use **Generate replacement URL** beside the invitation to rotate it safely.
 
 ## Development checks
 
@@ -242,6 +289,8 @@ Run the backend test suite:
 ```bash
 php artisan test --compact
 ```
+
+The PHPUnit suite uses attribute-based tests and currently runs without skipped tests. CI also enforces an initial 50% application coverage floor.
 
 Check and format the frontend:
 
