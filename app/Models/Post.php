@@ -122,6 +122,11 @@ class Post extends Model
      *
      * @return array<string, string>
      */
+    public function allowsInteractions(): bool
+    {
+        return $this->post_type !== TimelinePostType::LETTER;
+    }
+
     protected function casts(): array
     {
         return [

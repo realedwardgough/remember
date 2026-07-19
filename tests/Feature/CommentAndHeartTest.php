@@ -21,7 +21,7 @@ class CommentAndHeartTest extends TestCase
     public function test_authenticated_users_can_comment_on_posts(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create();
+        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
 
         $this
             ->actingAs($user)
@@ -40,7 +40,7 @@ class CommentAndHeartTest extends TestCase
     public function test_comments_require_content(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create();
+        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
 
         $this
             ->actingAs($user)
@@ -53,7 +53,7 @@ class CommentAndHeartTest extends TestCase
     public function test_authenticated_users_can_toggle_a_post_heart(): void
     {
         $user = User::factory()->create();
-        $post = Post::factory()->create();
+        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
 
         $this
             ->actingAs($user)
@@ -80,7 +80,7 @@ class CommentAndHeartTest extends TestCase
     public function test_authenticated_users_can_toggle_a_comment_heart(): void
     {
         $user = User::factory()->create();
-        $comment = Comment::factory()->create();
+        $comment = Comment::factory()->for(Post::factory()->state(['post_type' => TimelinePostType::MEMORY]))->create();
 
         $this
             ->actingAs($user)
@@ -158,7 +158,7 @@ class CommentAndHeartTest extends TestCase
 
     public function test_guests_cannot_comment_or_heart_posts(): void
     {
-        $post = Post::factory()->create();
+        $post = Post::factory()->create(['post_type' => TimelinePostType::MEMORY]);
 
         $this
             ->post(route('posts.comments.store', $post), ['content' => 'Hello'])
@@ -173,5 +173,31 @@ class CommentAndHeartTest extends TestCase
         $this
             ->post(route('comments.hearts.toggle', $comment))
             ->assertRedirect(route('login'));
+    }
+
+    public function test_private_letters_reject_comment_and_heart_endpoints(): void
+    {
+        $user = User::factory()->create();
+        $letter = Post::factory()->create([
+            'post_type' => TimelinePostType::LETTER,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('posts.comments.store', $letter), ['content' => 'Not allowed.'])
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->post(route('posts.hearts.toggle', $letter))
+            ->assertForbidden();
+
+        $comment = Comment::factory()->for($letter)->create();
+
+        $this->actingAs($user)
+            ->post(route('comments.hearts.toggle', $comment))
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('comments', 1);
+        $this->assertDatabaseEmpty('hearts');
+        $this->assertDatabaseEmpty('comment_hearts');
     }
 }
