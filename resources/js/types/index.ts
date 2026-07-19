@@ -86,4 +86,5 @@ export interface PageProps extends InertiaPageProps {
     family_count: number;
     media_count: number;
     memories_count: number;
+    flash?: { inviteUrl?: string | null };
 }

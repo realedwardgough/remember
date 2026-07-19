@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
             'version' => config('app.version'),
             'timeline' => fn (): array => $this->timeline(),
             'auth' => ['user' => $request->user()],
+            'flash' => ['inviteUrl' => fn (): ?string => session('inviteUrl')],
             'filters' => fn (): array => $this->filters($request),
             'postTypes' => fn (): array => array_map(
                 static fn (TimelinePostType $type): string => $type->value,
