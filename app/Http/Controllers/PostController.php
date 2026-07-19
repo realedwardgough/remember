@@ -14,14 +14,24 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class PostController extends Controller
 {
-    public function store(StorePostRequest $request, CreatePost $createPost): RedirectResponse
+    public function __construct(
+        private readonly CreatePost $createPost,
+        private readonly UpdatePost $updatePost,
+    ) {
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function store(StorePostRequest $request): RedirectResponse
     {
-        $createPost->handle(
+        $this->createPost->handle(
             author: $request->user(),
-            attributes: $request->validated(),
+            data: $request->toDTO(),
             mediaFiles: $request->file('media', []),
         );
 
@@ -47,11 +57,14 @@ class PostController extends Controller
         ]);
     }
 
-    public function update(UpdatePostRequest $request, Post $post, UpdatePost $updatePost): RedirectResponse
+    /**
+     * @throws Throwable
+     */
+    public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
         Gate::authorize('update', $post);
 
-        $updatePost->handle($post, $request->validated());
+        $this->updatePost->handle($post, $request->toDTO());
 
         return redirect()->route('home');
     }

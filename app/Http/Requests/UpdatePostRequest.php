@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
+use App\DTOs\PostData;
 use App\Enum\TimelinePostType;
 use App\Models\Post;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -22,6 +25,18 @@ class UpdatePostRequest extends FormRequest
         }
 
         return $this->user()?->can('update', $post) ?? false;
+    }
+
+    public function toDTO(): PostData
+    {
+        $validated = $this->validated();
+
+        return new PostData(
+            title: $validated['title'],
+            content: $validated['content'] ?? null,
+            postType: TimelinePostType::from($validated['post_type']),
+            publishedAt: $validated['published_at'],
+        );
     }
 
     /**

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Setup;
 
+use App\DTOs\SetupData;
 use App\Enum\UserRole;
 use App\Models\Timeline;
 use App\Models\User;
@@ -9,27 +12,23 @@ use Illuminate\Support\Facades\DB;
 
 class CreateTimeline
 {
-    /**
-     * @param  array{timeline_name: string, timeline_description?: ?string, name: string, username: string, email: string, password: string}  $input
-     */
-    public function execute(array $input): User
+    public function handle(SetupData $data): User
     {
-        return DB::transaction(function () use ($input): User {
+        return DB::transaction(function () use ($data): User {
             abort_if(Timeline::query()->exists() || User::query()->exists(), 404);
 
             Timeline::query()->create([
-                'name' => $input['timeline_name'],
-                'description' => $input['timeline_description'] ?? null,
+                'name' => $data->timelineName,
+                'description' => $data->timelineDescription,
                 'setup_completed_at' => now(),
             ]);
 
             $user = User::query()->create([
-                'name' => $input['name'],
-                'username' => $input['username'],
-                'email' => $input['email'],
-                'password' => $input['password'],
+                'name' => $data->name,
+                'username' => $data->username,
+                'email' => $data->email,
+                'password' => $data->password,
             ]);
-
             $user->assignRole(UserRole::ADMIN->value);
 
             return $user;

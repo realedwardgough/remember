@@ -22,6 +22,7 @@
     },
     "require-dev": {
         "andreapollastri/checkpoint": "^1.0",
+        "barryvdh/laravel-ide-helper": "^3.7",
         "brianium/paratest": "^7.20",
         "fakerphp/faker": "^1.24",
         "laravel/boost": "^2.2",

@@ -52,6 +52,9 @@
         "semicolon_after_instruction": true,
         "space_after_semicolon": true,
         "no_spaces_around_offset": true,
-        "trailing_comma_in_multiline": true
+        "trailing_comma_in_multiline": true,
+        "declare_strict_types": true,
+        "blank_line_after_opening_tag": true,
+        "blank_line_after_namespace": true
     }
 }

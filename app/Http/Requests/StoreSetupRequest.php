@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Concerns\PasswordValidationRules;
+use App\DTOs\SetupData;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,6 +18,20 @@ class StoreSetupRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user() === null;
+    }
+
+    public function toDTO(): SetupData
+    {
+        $validated = $this->validated();
+
+        return new SetupData(
+            timelineName: $validated['timeline_name'],
+            timelineDescription: $validated['timeline_description'] ?? null,
+            name: $validated['name'],
+            username: $validated['username'],
+            email: $validated['email'],
+            password: $validated['password'],
+        );
     }
 
     /** @return array<string, ValidationRule|array<mixed>|string> */

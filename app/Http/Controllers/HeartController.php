@@ -1,28 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Actions\TogglePostHeart;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class HeartController extends Controller
 {
+    public function __construct(private readonly TogglePostHeart $togglePostHeart)
+    {
+    }
+
+    /**
+     * @throws Throwable
+     */
     public function toggle(Request $request, Post $post): RedirectResponse
     {
-        $heart = $post->hearts()
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if ($heart) {
-            $heart->delete();
-
-            return back();
-        }
-
-        $post->hearts()->create([
-            'user_id' => $request->user()->id,
-        ]);
+        $this->togglePostHeart->handle($post, $request->user());
 
         return back();
     }

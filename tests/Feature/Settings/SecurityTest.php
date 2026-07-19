@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Settings;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_password_can_be_updated(): void
+    #[Test]
+    public function password_can_be_updated(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('current-password'),
@@ -32,7 +34,8 @@ class SecurityTest extends TestCase
         $this->assertTrue(Hash::check('new-password-123', $user->refresh()->password));
     }
 
-    public function test_current_password_is_required_to_update_password(): void
+    #[Test]
+    public function current_password_is_required_to_update_password(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('current-password'),
@@ -52,7 +55,8 @@ class SecurityTest extends TestCase
         $this->assertTrue(Hash::check('current-password', $user->refresh()->password));
     }
 
-    public function test_password_confirmation_is_required(): void
+    #[Test]
+    public function password_confirmation_is_required(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('current-password'),

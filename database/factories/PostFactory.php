@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Enum\TimelinePostType;
@@ -28,4 +30,24 @@ class PostFactory extends Factory
             'visibility' => 'family',
         ];
     }
+    public function event(): static
+    {
+        return $this->state(fn (): array => ['post_type' => TimelinePostType::EVENT]);
+    }
+
+    public function milestone(): static
+    {
+        return $this->state(fn (): array => ['post_type' => TimelinePostType::MILESTONE]);
+    }
+
+    public function memory(): static
+    {
+        return $this->state(fn (): array => ['post_type' => TimelinePostType::MEMORY]);
+    }
+
+    public function letter(): static
+    {
+        return $this->state(fn (): array => ['post_type' => TimelinePostType::LETTER]);
+    }
+
 }

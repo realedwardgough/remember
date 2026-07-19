@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
+use App\DTOs\CreateCommentDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCommentRequest extends FormRequest
@@ -19,6 +22,14 @@ class StoreCommentRequest extends FormRequest
      *
      * @return array<string, list<string>>
      */
+    public function toDTO(): CreateCommentDTO
+    {
+        return new CreateCommentDTO(
+            authorId: $this->user()->id,
+            content: $this->validated('content'),
+        );
+    }
+
     public function rules(): array
     {
         return [

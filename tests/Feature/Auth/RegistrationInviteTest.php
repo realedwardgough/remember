@@ -1,60 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Auth;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Models\RegistrationInvite;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class RegistrationInviteTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_command_creates_a_registration_invite_link(): void
+    #[Test]
+    public function command_creates_a_registration_invite_link(): void
     {
-        $exitCode = Artisan::call('users:create', [
-            'username' => 'Invited-Member',
-        ]);
+        $token = str_repeat('a', 64);
+        Str::createRandomStringsUsing(static fn (): string => $token);
 
-        $output = Artisan::output();
-
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('Registration invite created.', $output);
-        $this->assertStringContainsString('/register/invite/', $output);
+        $this->artisan('users:create', ['username' => 'Invited-Member'])
+            ->expectsOutput('Registration invite created.')
+            ->expectsOutput(URL::route('register.invite', ['token' => $token]))
+            ->assertSuccessful();
         $this->assertDatabaseHas('registration_invites', [
             'username' => 'invited-member',
             'accepted_by' => null,
             'accepted_at' => null,
         ]);
 
-        preg_match('#/register/invite/([A-Za-z0-9]+)#', $output, $matches);
-
-        $this->assertNotEmpty($matches[1]);
         $this->assertDatabaseHas('registration_invites', [
-            'token_hash' => RegistrationInvite::hashToken($matches[1]),
+            'token_hash' => RegistrationInvite::hashToken($token),
         ]);
     }
 
-    public function test_command_rejects_a_username_that_already_exists(): void
+    #[Test]
+    public function command_rejects_a_username_that_already_exists(): void
     {
         User::factory()->create([
             'username' => 'invited-member',
         ]);
 
-        $exitCode = Artisan::call('users:create', [
-            'username' => 'invited-member',
-        ]);
-
-        $this->assertSame(1, $exitCode);
+        $this->artisan('users:create', ['username' => 'invited-member'])
+            ->assertFailed();
         $this->assertDatabaseMissing('registration_invites', [
             'username' => 'invited-member',
         ]);
     }
 
-    public function test_invite_registration_screen_can_be_rendered(): void
+    #[Test]
+    public function invite_registration_screen_can_be_rendered(): void
     {
         $token = $this->createInviteToken('new-member');
 
@@ -69,7 +68,8 @@ class RegistrationInviteTest extends TestCase
         );
     }
 
-    public function test_used_invite_registration_screen_cannot_be_rendered(): void
+    #[Test]
+    public function used_invite_registration_screen_cannot_be_rendered(): void
     {
         $token = $this->createInviteToken('used-member', [
             'accepted_by' => User::factory()->create()->id,
@@ -81,7 +81,8 @@ class RegistrationInviteTest extends TestCase
         $response->assertNotFound();
     }
 
-    public function test_used_invite_cannot_create_another_user(): void
+    #[Test]
+    public function used_invite_cannot_create_another_user(): void
     {
         $token = $this->createInviteToken('grandad', [
             'accepted_by' => User::factory()->create()->id,

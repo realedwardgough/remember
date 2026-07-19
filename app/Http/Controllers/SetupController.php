@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Actions\Setup\CreateTimeline;
@@ -11,14 +13,17 @@ use Inertia\Response;
 
 class SetupController extends Controller
 {
+    public function __construct(private readonly CreateTimeline $createTimeline)
+    {
+    }
     public function show(): Response
     {
         return Inertia::render(component: 'Setup');
     }
 
-    public function store(StoreSetupRequest $request, CreateTimeline $createTimeline): RedirectResponse
+    public function store(StoreSetupRequest $request): RedirectResponse
     {
-        $user = $createTimeline->execute($request->validated());
+        $user = $this->createTimeline->handle($request->toDTO());
 
         Auth::login($user);
         $request->session()->regenerate();

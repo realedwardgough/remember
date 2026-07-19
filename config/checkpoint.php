@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Checkpoint\Checks;
 
 return [
@@ -141,10 +143,13 @@ return [
     */
 
     'suppressed' => [
-        // 'a1b2c3d4e5f6',
         '27555f4e8619',
         '554404ec2650',
         '41cb86d0e642',
+
+        // Suppressed as related to IDE-Helpers Generated Code
+        '322780040071',
+        '0b9283e0d4da',
     ],
 
 ];

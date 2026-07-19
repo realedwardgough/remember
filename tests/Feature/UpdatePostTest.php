@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Enum\TimelinePostType;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class UpdatePostTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_post_author_can_view_the_edit_page(): void
+    #[Test]
+    public function post_author_can_view_the_edit_page(): void
     {
         $user = User::factory()->create();
         $post = Post::factory()->for($user, 'author')->create([
@@ -41,7 +43,8 @@ class UpdatePostTest extends TestCase
             );
     }
 
-    public function test_post_author_can_update_the_post_details(): void
+    #[Test]
+    public function post_author_can_update_the_post_details(): void
     {
         $user = User::factory()->create();
         $post = Post::factory()->for($user, 'author')->create([
@@ -72,7 +75,8 @@ class UpdatePostTest extends TestCase
     }
 
 
-    public function test_post_author_can_soft_delete_the_post(): void
+    #[Test]
+    public function post_author_can_soft_delete_the_post(): void
     {
         $user = User::factory()->create();
         $post = Post::factory()->for($user, 'author')->create([
@@ -97,7 +101,8 @@ class UpdatePostTest extends TestCase
             );
     }
 
-    public function test_non_author_cannot_view_update_or_delete_the_post(): void
+    #[Test]
+    public function non_author_cannot_view_update_or_delete_the_post(): void
     {
         $author = User::factory()->create();
         $viewer = User::factory()->create();

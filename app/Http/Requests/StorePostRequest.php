@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
+use App\DTOs\PostData;
 use App\Enum\TimelinePostType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,6 +19,18 @@ class StorePostRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user() !== null;
+    }
+
+    public function toDTO(): PostData
+    {
+        $validated = $this->validated();
+
+        return new PostData(
+            title: $validated['title'],
+            content: $validated['content'] ?? null,
+            postType: TimelinePostType::from($validated['post_type']),
+            publishedAt: $validated['published_at'],
+        );
     }
 
     /**

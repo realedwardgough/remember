@@ -1,20 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use App\Enum\TimelinePostType;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class GalleryTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_gallery_shows_all_image_media(): void
+    #[Test]
+    public function gallery_shows_all_image_media(): void
     {
         $user = User::factory()->create(['name' => 'Alex Morgan', 'username' => 'alex']);
         $post = Post::factory()->for($user, 'author')->create([
@@ -62,7 +66,8 @@ class GalleryTest extends TestCase
                 ->where('memories_count', 1));
     }
 
-    public function test_gallery_and_media_routes_hide_private_letter_media(): void
+    #[Test]
+    public function gallery_and_media_routes_hide_private_letter_media(): void
     {
         $author = User::factory()->create(['username' => 'aunt']);
         $viewer = User::factory()->create(['username' => 'uncle']);
@@ -97,7 +102,8 @@ class GalleryTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_guests_cannot_view_gallery(): void
+    #[Test]
+    public function guests_cannot_view_gallery(): void
     {
         $this
             ->get(route('gallery'))

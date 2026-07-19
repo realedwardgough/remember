@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $googleCloudKeyFile = env('GOOGLE_CLOUD_KEY_FILE');
 $googleCloudKeyFilePath = filled($googleCloudKeyFile)
     ? (str_starts_with($googleCloudKeyFile, DIRECTORY_SEPARATOR) ? $googleCloudKeyFile : base_path($googleCloudKeyFile))
