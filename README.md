@@ -19,6 +19,10 @@
   <img src="public/images/examples/initial-timeline.png" alt="The Remember family timeline" width="100%">
 </p>
 
+## Why Use Remember?
+
+Remember was created to help families preserve the moments that matter most. Rather than disappearing into camera rolls or social media feeds, memories can be organised into a private timeline complete with photos, milestones and letters for future generations.
+
 ## What Remember offers
 
 - A chronological family timeline with memories, milestones, events and private letters
@@ -330,6 +334,10 @@ vendor/bin/pint --format agent
 ## Privacy
 
 Remember is intended for private family content. Authentication protects the timeline, account creation is invitation-only, and letters are visible only to their author. Deployment security, backups, access controls and storage privacy remain the responsibility of the person hosting the application.
+
+## Contributing
+
+Issues and pull requests are welcome. If you have an idea that would make Remember better, feel free to open a discussion.
 
 ## License
 
