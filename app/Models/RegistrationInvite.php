@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property string $username
  * @property string $token_hash
+ * @property string|null $token
  * @property int|null $accepted_by
  * @property \Carbon\CarbonImmutable|null $accepted_at
  * @property \Carbon\CarbonImmutable|null $created_at
@@ -30,7 +31,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrationInvite whereUsername($value)
  * @mixin \Eloquent
  */
-#[Fillable(['username', 'token_hash', 'accepted_by', 'accepted_at'])]
+#[Fillable(['username', 'token_hash', 'token', 'accepted_by', 'accepted_at'])]
+#[\Illuminate\Database\Eloquent\Attributes\Hidden(['token'])]
 class RegistrationInvite extends Model
 {
     use HasFactory;
@@ -59,6 +61,7 @@ class RegistrationInvite extends Model
     {
         return [
             'accepted_at' => 'datetime',
+            'token' => 'encrypted',
         ];
     }
 }
