@@ -38,12 +38,7 @@ Route::middleware('guest')
     ->get(uri: '/register/invite/{token}', action: RegistrationInviteController::class)
     ->name(name: 'register.invite');
 
-/**
- * All users must be logged in to access any of the features of
- * the site. Therefore, all routes must be verified unless they
- * access any of the base auth routes such as 'login' or 'register'
- */
-Route::middleware(['auth', 'verified'])->group(function (Router $router): void {
+Route::middleware('auth')->group(function (Router $router): void {
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');
     $router->get(uri: '/gallery', action: [GalleryController::class, 'index'])->name(name: 'gallery');
     $router->get(uri: '/profile', action: [ProfileController::class, 'edit'])->name(name: 'profile.edit');

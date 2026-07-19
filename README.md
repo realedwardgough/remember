@@ -1,6 +1,13 @@
 # Remember
 
 <p align="center">
+  <a href="https://github.com/realedwardgough/remember/actions/workflows/tests.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/realedwardgough/remember/actions/workflows/lint.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/lint.yml/badge.svg" alt="Quality"></a>
+  <a href="https://github.com/realedwardgough/remember/actions/workflows/checkpoint.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/checkpoint.yml/badge.svg" alt="Security scan"></a>
+  <a href="https://github.com/realedwardgough/remember/blob/master/LICENSE"><img src="https://img.shields.io/github/license/realedwardgough/remember" alt="MIT license"></a>
+</p>
+
+<p align="center">
   <strong>A private, self-hosted family timeline for preserving the moments that matter.</strong>
 </p>
 
@@ -91,8 +98,6 @@ Before installing Remember, make sure the host has:
 - A web server such as Nginx, Apache or Laravel's development server
 - Writable `storage` and `bootstrap/cache` directories
 
-For production use, SMTP details are also recommended so password-reset and account-related mail can be delivered.
-
 > [!IMPORTANT]
 > Remember uses Laravel cache tags for timeline caching and cache invalidation. The database, file and array cache drivers do **not** support cache tags. Redis must be running and `CACHE_STORE=redis` must remain configured, otherwise timeline requests and post updates will fail.
 
@@ -101,7 +106,7 @@ For production use, SMTP details are also recommended so password-reset and acco
 ### 1. Clone and install dependencies
 
 ```bash
-git clone <repository-url> remember
+git clone https://github.com/realedwardgough/remember.git remember
 cd remember
 composer install
 npm install
