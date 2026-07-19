@@ -60,6 +60,25 @@
                 </div>
             </header>
 
+            <Link
+                v-if="canManageTimeline"
+                :href="TimelineManagementController()"
+                class="flex items-center justify-between gap-4 border-4 border-zinc-950 bg-[#f4ce63] p-5 text-zinc-950 shadow-[7px_7px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#18181b]"
+            >
+                <span>
+                    <strong class="block text-lg font-black"
+                        >Manage timeline</strong
+                    >
+                    <span class="mt-1 block text-sm font-semibold"
+                        >Update details, invite members, and manage roles.</span
+                    >
+                </span>
+                <i
+                    class="fa-solid fa-arrow-right text-xl"
+                    aria-hidden="true"
+                ></i>
+            </Link>
+
             <section class="grid items-start gap-6 xl:grid-cols-2">
                 <article
                     class="border-4 border-zinc-950 bg-white shadow-[7px_7px_0_#77c8b5]"
@@ -288,6 +307,7 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import TimelineManagementController from '@/actions/App/Http/Controllers/TimelineManagementController';
 import Modal from '@/components/Modal.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
@@ -297,6 +317,8 @@ import { logout } from '@/routes';
 import { update as updatePassword } from '@/routes/user-password';
 import { update as updateProfile } from '@/routes/user-profile-information';
 import type { PageProps } from '@/types';
+
+defineProps<{ canManageTimeline: boolean }>();
 
 type ActiveModal = 'post' | 'search' | null;
 

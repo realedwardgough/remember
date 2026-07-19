@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Actions\CreateRegistrationInvite as CreateRegistrationInviteAction;
 use App\Models\RegistrationInvite;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -20,26 +20,16 @@ use function Laravel\Prompts\text;
 #[Signature('users:create {username? : The username to reserve for the invited user}')]
 class CreateRegistrationInvite extends Command
 {
-    /**
-     * Execute the console command.
-     */
+    public function __construct(private readonly CreateRegistrationInviteAction $createInvite)
+    {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
-        if (! $username = $this->argument(key: 'username')) {
-            $username = text(label: 'What is the username?', required: true);
-        }
-
-        $username = Str::lower((string) $username);
-
+        $username = Str::lower((string) ($this->argument('username') ?: text(label: 'What is the username?', required: true)));
         $validator = Validator::make(['username' => $username], [
-            'username' => [
-                'required',
-                'string',
-                'max:255',
-                'alpha_dash:ascii',
-                Rule::unique(User::class, 'username'),
-                Rule::unique(RegistrationInvite::class, 'username'),
-            ],
+            'username' => ['required', 'string', 'max:50', 'alpha_dash:ascii', Rule::unique(User::class, 'username'), Rule::unique(RegistrationInvite::class, 'username')->whereNull('accepted_at')],
         ]);
 
         if ($validator->fails()) {
@@ -50,15 +40,9 @@ class CreateRegistrationInvite extends Command
             return self::FAILURE;
         }
 
-        $token = Str::random(64);
-
-        RegistrationInvite::query()->create([
-            'username' => $username,
-            'token_hash' => RegistrationInvite::hashToken($token),
-        ]);
-
+        $result = $this->createInvite->handle($username);
         $this->info('Registration invite created.');
-        $this->line(URL::route('register.invite', ['token' => $token]));
+        $this->line($result->url);
 
         return self::SUCCESS;
     }
