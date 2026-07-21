@@ -181,6 +181,12 @@
                                 </button>
                             </div>
                         </div>
+                        <p
+                            v-if="flash?.inviteNotificationSent"
+                            class="m-5 mt-0 border-3 border-zinc-950 bg-[#77c8b5] p-3 text-sm font-black"
+                        >
+                            Email notification sent.
+                        </p>
                         <div
                             v-if="pendingInvites.length"
                             class="border-t-3 border-zinc-950 p-5"
@@ -211,8 +217,23 @@
                                         >
                                             Copy invite URL
                                         </button>
+                                        <button
+                                            v-if="
+                                                $page.props.remember
+                                                    .emailNotificationsEnabled &&
+                                                invite.url
+                                            "
+                                            type="button"
+                                            class="cursor-pointer border-2 border-zinc-950 bg-[#e06573] px-3 py-1.5 text-xs font-black text-white"
+                                            @click="
+                                                invitePendingNotification =
+                                                    invite
+                                            "
+                                        >
+                                            Send email notification
+                                        </button>
                                         <Form
-                                            v-else
+                                            v-if="!invite.url"
                                             v-bind="
                                                 refreshInvitation.form.put(
                                                     invite.id,
@@ -327,6 +348,11 @@
             </section>
         </main>
 
+        <SendInviteNotificationModal
+            :invite="invitePendingNotification"
+            @close="invitePendingNotification = null"
+        />
+
         <ConfirmModal
             :show="memberPendingRemoval !== null"
             title="Remove timeline member?"
@@ -352,6 +378,7 @@ import {
 import { destroy } from '@/actions/App/Http/Controllers/TimelineUserController';
 import { update as updateRole } from '@/actions/App/Http/Controllers/TimelineUserRoleController';
 import ConfirmModal from '@/components/ConfirmModal.vue';
+import SendInviteNotificationModal from '@/components/SendInviteNotificationModal.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
 import { edit as profile } from '@/routes/profile';
@@ -376,10 +403,14 @@ const props = defineProps<{
     users: Member[];
     roles: string[];
     pendingInvites: Invite[];
-    flash?: { inviteUrl?: string | null };
+    flash?: {
+        inviteUrl?: string | null;
+        inviteNotificationSent?: boolean | null;
+    };
 }>();
 
 const memberPendingRemoval = ref<Member | null>(null);
+const invitePendingNotification = ref<Invite | null>(null);
 const removeProcessing = ref(false);
 const memberRemovalMessage = computed(() =>
     memberPendingRemoval.value

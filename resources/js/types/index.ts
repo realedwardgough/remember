@@ -79,6 +79,7 @@ export interface Family {
 
 export interface PageProps extends InertiaPageProps {
     family: Record<string, Family>;
+    remember: { emailNotificationsEnabled: boolean };
     timeline: { name: string; description: string | null };
     filters: TimelineFilters;
     postTypes: TimelinePostType[];
@@ -86,5 +87,8 @@ export interface PageProps extends InertiaPageProps {
     family_count: number;
     media_count: number;
     memories_count: number;
-    flash?: { inviteUrl?: string | null };
+    flash?: {
+        inviteUrl?: string | null;
+        inviteNotificationSent?: boolean | null;
+    };
 }

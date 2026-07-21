@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->put(uri: '/timeline', action: [TimelineController::class, 'update'])->name(name: 'timeline.update');
     $router->post(uri: '/timeline/invitations', action: [TimelineInvitationController::class, 'store'])->name(name: 'timeline.invitations.store');
     $router->put(uri: '/timeline/invitations/{registrationInvite}', action: [TimelineInvitationController::class, 'update'])->name(name: 'timeline.invitations.update');
+    $router->post(uri: '/timeline/invitations/{registrationInvite}/notification', action: [TimelineInvitationController::class, 'notify'])->name(name: 'timeline.invitations.notify');
     $router->put(uri: '/timeline/users/{user}/role', action: [TimelineUserRoleController::class, 'update'])->name(name: 'timeline.users.role.update');
     $router->delete(uri: '/timeline/users/{user}', action: [TimelineUserController::class, 'destroy'])->name(name: 'timeline.users.destroy');
     $router->post(uri: '/posts', action: [PostController::class, 'store'])->name(name: 'posts.store');
