@@ -8,6 +8,7 @@ use App\Actions\RemoveTimelineUser;
 use App\Http\Requests\RemoveTimelineUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class TimelineUserController extends Controller
 {
@@ -19,6 +20,9 @@ class TimelineUserController extends Controller
     {
         $this->removeUser->handle($request->user(), $user);
 
-        return back();
+        return Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Account removed.',
+        ])->back();
     }
 }

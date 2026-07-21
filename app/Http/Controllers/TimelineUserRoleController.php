@@ -8,6 +8,7 @@ use App\Actions\AssignUserRole;
 use App\Http\Requests\UpdateTimelineUserRoleRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class TimelineUserRoleController extends Controller
 {
@@ -19,6 +20,9 @@ class TimelineUserRoleController extends Controller
     {
         $this->assignRole->handle($user, $request->role());
 
-        return back();
+        return Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'User role updated.',
+        ])->back();
     }
 }

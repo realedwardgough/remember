@@ -29,6 +29,11 @@ class TimelineInvitationController extends Controller
     {
         $result = $this->createInvite->handle($request->validated('username'));
 
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Invite link created.',
+        ]);
+
         return back()->with('inviteUrl', $result->url);
     }
 
