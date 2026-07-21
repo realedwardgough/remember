@@ -12,6 +12,7 @@ use App\Http\Requests\StoreTimelineInvitationRequest;
 use App\Models\RegistrationInvite;
 use App\Notifications\RegistrationInviteNotification;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
@@ -53,6 +54,9 @@ class TimelineInvitationController extends Controller
             ),
         );
 
-        return back()->with('inviteNotificationSent', true);
+        return Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Email notification sent.',
+        ])->back();
     }
 }

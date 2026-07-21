@@ -89,6 +89,5 @@ export interface PageProps extends InertiaPageProps {
     memories_count: number;
     flash?: {
         inviteUrl?: string | null;
-        inviteNotificationSent?: boolean | null;
     };
 }

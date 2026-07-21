@@ -40,12 +40,15 @@
                 <slot />
             </div>
         </template>
+
+        <ToastNotifications />
     </main>
 </template>
 
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import ToastNotifications from '@/components/ToastNotifications.vue';
 import { logout } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps } from '@/types';

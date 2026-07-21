@@ -156,7 +156,8 @@ class TimelineManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('timeline.invitations.notify', $invite), ['email' => 'invitee@example.com'])
             ->assertRedirect()
-            ->assertSessionHas('inviteNotificationSent', true);
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Email notification sent.');
 
         Notification::assertSentOnDemand(
             RegistrationInviteNotification::class,

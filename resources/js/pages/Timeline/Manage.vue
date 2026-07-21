@@ -181,12 +181,6 @@
                                 </button>
                             </div>
                         </div>
-                        <p
-                            v-if="flash?.inviteNotificationSent"
-                            class="m-5 mt-0 border-3 border-zinc-950 bg-[#77c8b5] p-3 text-sm font-black"
-                        >
-                            Email notification sent.
-                        </p>
                         <div
                             v-if="pendingInvites.length"
                             class="border-t-3 border-zinc-950 p-5"
@@ -405,7 +399,6 @@ const props = defineProps<{
     pendingInvites: Invite[];
     flash?: {
         inviteUrl?: string | null;
-        inviteNotificationSent?: boolean | null;
     };
 }>();
 

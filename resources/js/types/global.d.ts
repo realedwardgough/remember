@@ -16,6 +16,9 @@ declare module 'vite/client' {
 
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
+        flashDataType: {
+            toast?: { type: 'success' | 'error'; message: string };
+        };
         sharedPageProps: {
             name: string;
             auth: Auth;
