@@ -72,11 +72,13 @@ function dismiss(id: number): void {
 }
 
 const removeFlashListener = router.on('flash', (event) => {
-    const toast = event.detail.flash.toast;
+    const { toast, toasts: flashedToasts } = event.detail.flash;
 
     if (toast) {
         show(toast.message);
     }
+
+    flashedToasts?.forEach((flashedToast) => show(flashedToast.message));
 });
 
 onBeforeUnmount(() => {

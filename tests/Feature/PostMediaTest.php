@@ -49,7 +49,9 @@ class PostMediaTest extends TestCase
                 ],
             ]);
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('home'))
+            ->assertInertiaFlash('toasts.0.message', 'Post created.')
+            ->assertInertiaFlash('toasts.1.message', '2 images uploaded.');
 
         $post = Post::query()->with('media')->sole();
 

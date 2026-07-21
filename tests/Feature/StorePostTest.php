@@ -39,7 +39,9 @@ class StorePostTest extends TestCase
                 'post_type' => TimelinePostType::LETTER->value,
                 'published_at' => '2026-05-01',
             ])
-            ->assertRedirect(route('home'));
+            ->assertRedirect(route('home'))
+            ->assertInertiaFlash('toasts.0.type', 'success')
+            ->assertInertiaFlash('toasts.0.message', 'Post created.');
 
         $post = Post::query()->sole();
 
