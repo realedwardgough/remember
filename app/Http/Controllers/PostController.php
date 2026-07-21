@@ -9,6 +9,7 @@ use App\Actions\UpdatePost;
 use App\Enum\TimelinePostType;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
+use App\Models\Media;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -24,16 +25,34 @@ class PostController extends Controller
     ) {
     }
 
-    /**
-     * @throws Throwable
-     */
+    /** @throws Throwable */
     public function store(StorePostRequest $request): RedirectResponse
     {
-        $this->createPost->handle(
+        $post = $this->createPost->handle(
             author: $request->user(),
             data: $request->toDTO(),
             mediaFiles: $request->file('media', []),
         );
+
+        $toasts = [[
+            'type' => 'success',
+            'message' => 'Post created.',
+        ]];
+
+        $uploadedImageCount = $post->media->filter(
+            static fn (Media $media): bool => str_starts_with($media->mime_type, 'image/'),
+        )->count();
+
+        if ($uploadedImageCount > 0) {
+            $toasts[] = [
+                'type' => 'success',
+                'message' => $uploadedImageCount === 1
+                    ? '1 image uploaded.'
+                    : "{$uploadedImageCount} images uploaded.",
+            ];
+        }
+
+        Inertia::flash('toasts', $toasts);
 
         return redirect()->route('home');
     }
@@ -57,14 +76,17 @@ class PostController extends Controller
         ]);
     }
 
-    /**
-     * @throws Throwable
-     */
+    /** @throws Throwable */
     public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
         Gate::authorize('update', $post);
 
         $this->updatePost->handle($post, $request->toDTO());
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Post updated.',
+        ]);
 
         return redirect()->route('home');
     }
@@ -74,6 +96,11 @@ class PostController extends Controller
         Gate::authorize('delete', $post);
 
         $post->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Post deleted.',
+        ]);
 
         return redirect()->route('home');
     }

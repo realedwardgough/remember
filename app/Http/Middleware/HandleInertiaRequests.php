@@ -37,7 +37,6 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'inviteUrl' => fn (): ?string => session('inviteUrl'),
-                'inviteNotificationSent' => fn (): ?bool => session('inviteNotificationSent'),
             ],
             'filters' => fn (): array => $this->filters($request),
             'postTypes' => fn (): array => array_map(

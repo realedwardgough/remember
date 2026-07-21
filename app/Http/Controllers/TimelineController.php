@@ -8,6 +8,7 @@ use App\Actions\UpdateTimeline;
 use App\Http\Requests\UpdateTimelineRequest;
 use App\Queries\GetPrimaryTimeline;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class TimelineController extends Controller
 {
@@ -21,6 +22,9 @@ class TimelineController extends Controller
     {
         $this->updateTimeline->handle($this->primaryTimeline->handle(), $request->toDTO());
 
-        return back();
+        return Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Timeline details updated.',
+        ])->back();
     }
 }

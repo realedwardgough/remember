@@ -76,7 +76,10 @@ class TimelineManagementTest extends TestCase
         $this->actingAs($this->admin())->put(route('timeline.update'), [
             'name' => 'The Morgan Timeline',
             'description' => 'Stories shared across generations.',
-        ])->assertRedirect();
+        ])
+            ->assertRedirect()
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Timeline details updated.');
 
         $timeline = Timeline::query()->sole();
         $this->assertSame('The Morgan Timeline', $timeline->name);
@@ -88,7 +91,11 @@ class TimelineManagementTest extends TestCase
     {
         $this->actingAs($this->admin())->post(route('timeline.invitations.store'), [
             'username' => 'new-family-member',
-        ])->assertRedirect()->assertSessionHas('inviteUrl');
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('inviteUrl')
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Invite link created.');
 
         $this->assertDatabaseHas('registration_invites', ['username' => 'new-family-member', 'accepted_at' => null]);
     }
@@ -156,7 +163,8 @@ class TimelineManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('timeline.invitations.notify', $invite), ['email' => 'invitee@example.com'])
             ->assertRedirect()
-            ->assertSessionHas('inviteNotificationSent', true);
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Email notification sent.');
 
         Notification::assertSentOnDemand(
             RegistrationInviteNotification::class,
@@ -213,7 +221,11 @@ class TimelineManagementTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole(UserRole::USER->value);
 
-        $this->actingAs($admin)->put(route('timeline.users.role.update', $user), ['role' => 'admin'])->assertRedirect();
+        $this->actingAs($admin)
+            ->put(route('timeline.users.role.update', $user), ['role' => 'admin'])
+            ->assertRedirect()
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'User role updated.');
 
         $this->assertTrue($user->refresh()->hasRole(UserRole::ADMIN->value));
     }
@@ -238,7 +250,11 @@ class TimelineManagementTest extends TestCase
         $post = Post::factory()->for($user, 'author')->memory()->create();
         $comment = Comment::factory()->for($user, 'author')->for($post)->create();
 
-        $this->actingAs($admin)->delete(route('timeline.users.destroy', $user))->assertRedirect();
+        $this->actingAs($admin)
+            ->delete(route('timeline.users.destroy', $user))
+            ->assertRedirect()
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Account removed.');
 
         $this->assertModelMissing($user);
         $this->assertNull($post->refresh()->author_id);

@@ -62,7 +62,9 @@ class UpdatePostTest extends TestCase
                 'post_type' => TimelinePostType::EVENT->value,
                 'published_at' => '2026-05-30',
             ])
-            ->assertRedirect(route('home'));
+            ->assertRedirect(route('home'))
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Post updated.');
 
         $post->refresh()->load('tags');
 
@@ -87,7 +89,9 @@ class UpdatePostTest extends TestCase
         $this
             ->actingAs($user)
             ->delete(route('posts.destroy', $post))
-            ->assertRedirect(route('home'));
+            ->assertRedirect(route('home'))
+            ->assertInertiaFlash('toast.type', 'success')
+            ->assertInertiaFlash('toast.message', 'Post deleted.');
 
         $this->assertSoftDeleted($post);
 
