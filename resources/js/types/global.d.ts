@@ -19,6 +19,7 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            remember: { emailNotificationsEnabled: boolean };
             [key: string]: unknown;
         };
     }

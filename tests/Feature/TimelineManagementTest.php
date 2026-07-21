@@ -10,8 +10,10 @@ use App\Models\Post;
 use App\Models\RegistrationInvite;
 use App\Models\Timeline;
 use App\Models\User;
+use App\Notifications\RegistrationInviteNotification;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -120,6 +122,88 @@ class TimelineManagementTest extends TestCase
 
         $this->assertNotNull($invite->refresh()->token);
         $this->assertNotSame(RegistrationInvite::hashToken('unrecoverable-token'), $invite->token_hash);
+    }
+
+
+    #[Test]
+    public function remember_configuration_is_shared_with_every_inertia_page(): void
+    {
+        $admin = $this->admin();
+        config()->set('remember.email_notifications', false);
+
+        $this->actingAs($admin)->get(route('timeline.manage'))->assertInertia(
+            fn (Assert $page) => $page->where('remember.emailNotificationsEnabled', false),
+        );
+
+        config()->set('remember.email_notifications', true);
+
+        $this->actingAs($admin)->get(route('profile.edit'))->assertInertia(
+            fn (Assert $page) => $page->where('remember.emailNotificationsEnabled', true),
+        );
+    }
+
+    #[Test]
+    public function admins_can_email_a_pending_registration_invitation(): void
+    {
+        config()->set('remember.email_notifications', true);
+        Notification::fake();
+        $invite = RegistrationInvite::query()->create([
+            'username' => 'email-invite',
+            'token_hash' => RegistrationInvite::hashToken('email-token'),
+            'token' => 'email-token',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('timeline.invitations.notify', $invite), ['email' => 'invitee@example.com'])
+            ->assertRedirect()
+            ->assertSessionHas('inviteNotificationSent', true);
+
+        Notification::assertSentOnDemand(
+            RegistrationInviteNotification::class,
+            function (RegistrationInviteNotification $notification, array $channels, object $notifiable): bool {
+                $message = $notification->toMail($notifiable);
+
+                return $notifiable->routes['mail'] === 'invitee@example.com'
+                    && $channels === ['mail']
+                    && $message->actionUrl === route('register.invite', ['token' => 'email-token']);
+            },
+        );
+    }
+
+    #[Test]
+    public function invitation_emails_are_unavailable_when_disabled(): void
+    {
+        config()->set('remember.email_notifications', false);
+        Notification::fake();
+        $invite = RegistrationInvite::query()->create([
+            'username' => 'disabled-email',
+            'token_hash' => RegistrationInvite::hashToken('disabled-token'),
+            'token' => 'disabled-token',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('timeline.invitations.notify', $invite), ['email' => 'invitee@example.com'])
+            ->assertForbidden();
+
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function invitation_notification_requires_a_valid_email_address(): void
+    {
+        config()->set('remember.email_notifications', true);
+        Notification::fake();
+        $invite = RegistrationInvite::query()->create([
+            'username' => 'invalid-email',
+            'token_hash' => RegistrationInvite::hashToken('invalid-token'),
+            'token' => 'invalid-token',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('timeline.invitations.notify', $invite), ['email' => 'not-an-email'])
+            ->assertSessionHasErrors('email');
+
+        Notification::assertNothingSent();
     }
 
     #[Test]

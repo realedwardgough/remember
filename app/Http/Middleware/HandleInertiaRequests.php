@@ -32,7 +32,13 @@ class HandleInertiaRequests extends Middleware
             'version' => config('app.version'),
             'timeline' => fn (): array => $this->timeline(),
             'auth' => ['user' => $request->user()],
-            'flash' => ['inviteUrl' => fn (): ?string => session('inviteUrl')],
+            'remember' => [
+                'emailNotificationsEnabled' => (bool) config('remember.email_notifications'),
+            ],
+            'flash' => [
+                'inviteUrl' => fn (): ?string => session('inviteUrl'),
+                'inviteNotificationSent' => fn (): ?bool => session('inviteNotificationSent'),
+            ],
             'filters' => fn (): array => $this->filters($request),
             'postTypes' => fn (): array => array_map(
                 static fn (TimelinePostType $type): string => $type->value,
