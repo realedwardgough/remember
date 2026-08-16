@@ -70,6 +70,7 @@ return [
             'andreapollastri/checkpoint',
             'google/cloud-core',
             'google/cloud-storage',
+            'pragmarx/google2fa',
             'google/gax',
             'laravel/framework',
             'laravel/boost',
