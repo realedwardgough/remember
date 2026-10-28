@@ -18,7 +18,7 @@
                 <strong>@{{ invite.username }}</strong
                 >.
             </p>
-            <label class="grid gap-2 text-sm font-black">
+            <label class="grid gap-2 text-sm font-semibold">
                 Email address
                 <input
                     name="email"
@@ -28,11 +28,11 @@
                     autocomplete="email"
                     autofocus
                     placeholder="person@example.com"
-                    class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                    class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold focus:bg-canvas"
                 />
                 <span
                     v-if="errors.email"
-                    class="border-l-4 border-red-600 pl-2 text-red-700"
+                    class="border-l border-red-600 pl-2 text-red-700"
                     >{{ errors.email }}</span
                 >
             </label>
@@ -40,7 +40,7 @@
                 <button
                     type="button"
                     :disabled="processing"
-                    class="cursor-pointer border-3 border-zinc-950 bg-white px-4 py-2.5 text-sm font-black text-zinc-950 disabled:opacity-60"
+                    class="cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 disabled:opacity-60"
                     @click="emit('close')"
                 >
                     Cancel
@@ -48,7 +48,7 @@
                 <button
                     type="submit"
                     :disabled="processing"
-                    class="cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#18181b] disabled:opacity-60"
+                    class="cursor-pointer rounded-xl border border-stone-200 bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                 >
                     {{ processing ? 'Sending…' : 'Send notification' }}
                 </button>

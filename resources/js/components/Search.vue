@@ -2,12 +2,8 @@
     <section
         class="h-fit self-start inert:pointer-events-none inert:opacity-60"
     >
-        <div
-            class="mb-5 border-3 border-zinc-950 bg-[#b9eadf] p-4 shadow-[4px_4px_0_0_#77c8b5]"
-        >
-            <h2 class="text-lg font-black text-zinc-950 uppercase">
-                Find a moment
-            </h2>
+        <div class="mb-5 rounded-xl border border-stone-200 bg-mint p-4">
+            <h2 class="text-lg font-semibold text-zinc-950">Find a moment</h2>
             <p class="mt-1 text-sm font-semibold text-zinc-700">
                 Search titles, memories, letters, and milestones.
             </p>
@@ -20,19 +16,19 @@
                 name="search"
                 type="search"
                 placeholder="What are you looking for?"
-                class="min-h-12 border-3 border-zinc-950 bg-white px-4 text-base font-semibold text-zinc-950 placeholder:font-medium placeholder:text-zinc-400 focus:shadow-[4px_4px_0_0_#e06573] focus:outline-none"
+                class="min-h-12 rounded-xl border border-stone-200 bg-white px-4 text-base font-semibold text-zinc-950 placeholder:font-medium placeholder:text-zinc-400"
             />
             <div class="flex gap-2">
                 <button
                     type="submit"
-                    class="inline-flex min-h-11 flex-1 items-center justify-center border-3 border-zinc-950 bg-[#e06573] px-4 text-sm font-black text-white shadow-[4px_4px_0_0_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5"
+                    class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-stone-200 bg-primary px-4 text-sm font-semibold text-white"
                 >
                     Search
                 </button>
                 <Link
                     v-if="filters.search !== ''"
                     :href="home({ query: queryForSearch('') })"
-                    class="inline-flex min-h-11 items-center justify-center border-3 border-zinc-950 bg-white px-4 text-sm font-black text-zinc-700 hover:bg-[#fff0b8]"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-butter"
                     @click="emit('close')"
                 >
                     Clear

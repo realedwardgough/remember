@@ -8,11 +8,11 @@
             v-for="tag in tags"
             :key="tag"
             :href="home({ query: queryForTag(tag) })"
-            class="border-2 border-zinc-950 px-2 py-1 text-xs font-black shadow-[2px_2px_0_0_#18181b] transition-[background-color,translate] hover:-translate-x-0.5 hover:-translate-y-0.5"
+            class="inline-flex min-h-11 items-center rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold transition-[background-color,translate]"
             :class="
                 activeTag === cleanTag(tag)
-                    ? 'bg-[#e06573] text-white'
-                    : 'bg-white text-zinc-700 hover:bg-[#fff0b8]'
+                    ? 'bg-primary text-white'
+                    : 'bg-lilac text-primary hover:bg-butter'
             "
         >
             {{ tag }}

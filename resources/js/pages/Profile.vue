@@ -9,91 +9,58 @@
 
         <Head title="Profile" />
 
-        <section class="grid gap-8 pb-24 md:pb-0">
-            <header
-                class="relative overflow-hidden border-4 border-zinc-950 bg-[#e06573] p-5 shadow-[8px_8px_0_#18181b] sm:p-8"
+        <section class="grid gap-6">
+            <PageHeader
+                :title="user.name"
+                eyebrow="Your account"
+                :description="user.email"
             >
-                <div
-                    class="absolute -right-8 -bottom-12 size-36 rotate-12 border-4 border-zinc-950 bg-[#77c8b5] sm:size-44"
-                    aria-hidden="true"
-                ></div>
-
-                <p
-                    class="relative z-10 inline-flex border-3 border-zinc-950 bg-[#f4ce63] px-3 py-1 text-xs font-black tracking-[0.2em] text-zinc-950 uppercase shadow-[3px_3px_0_#18181b]"
+                <span
+                    class="flex size-14 items-center justify-center rounded-full bg-lilac text-xl font-semibold text-primary"
+                    >{{ initials }}</span
                 >
-                    Your profile
-                </p>
-
-                <div
-                    class="relative z-10 mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
+                <Link
+                    :href="logout()"
+                    method="post"
+                    as="button"
+                    class="button-secondary"
+                    >Log out</Link
                 >
-                    <div class="flex min-w-0 items-center gap-4">
-                        <div
-                            class="flex size-18 shrink-0 -rotate-2 items-center justify-center border-4 border-zinc-950 bg-[#77c8b5] text-2xl font-black text-zinc-950 shadow-[5px_5px_0_#18181b] sm:size-24 sm:text-3xl"
-                            aria-hidden="true"
-                        >
-                            {{ initials }}
-                        </div>
-                        <div class="min-w-0">
-                            <h1
-                                class="text-3xl leading-none font-black tracking-tight break-words text-white sm:text-5xl"
-                            >
-                                {{ user.name }}
-                            </h1>
-                            <p
-                                class="mt-3 w-fit max-w-full truncate border-2 border-zinc-950 bg-white px-2 py-1 text-sm font-bold text-zinc-950"
-                            >
-                                {{ user.email }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <Link
-                        :href="logout()"
-                        method="post"
-                        as="button"
-                        class="inline-flex w-fit cursor-pointer items-center gap-2 border-3 border-zinc-950 bg-white px-4 py-2.5 text-sm font-black text-zinc-950 shadow-[4px_4px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#18181b] focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-white"
-                    >
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                        Log out
-                    </Link>
-                </div>
-            </header>
+            </PageHeader>
 
             <Link
                 v-if="canManageTimeline"
                 :href="TimelineManagementController()"
-                class="flex items-center justify-between gap-4 border-4 border-zinc-950 bg-[#f4ce63] p-5 text-zinc-950 shadow-[7px_7px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[9px_9px_0_#18181b]"
+                class="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-butter p-5 text-zinc-950 transition"
             >
                 <span>
-                    <strong class="block text-lg font-black"
+                    <strong class="block text-lg font-semibold"
                         >Manage timeline</strong
                     >
                     <span class="mt-1 block text-sm font-semibold"
                         >Update details, invite members, and manage roles.</span
                     >
                 </span>
-                <i
-                    class="fa-solid fa-arrow-right text-xl"
+                <AppIcon
+                    name="fa-solid fa-arrow-right"
+                    class="text-xl"
                     aria-hidden="true"
-                ></i>
+                />
             </Link>
 
             <section class="grid items-start gap-6 xl:grid-cols-2">
-                <article
-                    class="border-4 border-zinc-950 bg-white shadow-[7px_7px_0_#77c8b5]"
-                >
+                <article class="surface overflow-hidden">
                     <div
-                        class="flex items-start gap-4 border-b-3 border-zinc-950 bg-[#f7f1e7] p-5"
+                        class="flex items-start gap-4 border-b border-stone-200 bg-canvas p-5"
                     >
                         <div
-                            class="flex size-11 shrink-0 -rotate-2 items-center justify-center border-3 border-zinc-950 bg-[#77c8b5] text-lg shadow-[3px_3px_0_#18181b]"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-mint text-lg"
                             aria-hidden="true"
                         >
-                            <i class="fa-solid fa-address-card"></i>
+                            <AppIcon name="fa-solid fa-address-card" />
                         </div>
                         <div>
-                            <h2 class="text-xl font-black text-zinc-950">
+                            <h2 class="text-xl font-semibold text-zinc-950">
                                 Account details
                             </h2>
                             <p
@@ -110,7 +77,7 @@
                         class="grid gap-5 p-5 sm:p-6"
                     >
                         <label
-                            class="grid gap-2 text-sm font-black text-zinc-950"
+                            class="grid gap-2 text-sm font-semibold text-zinc-950"
                         >
                             Name
                             <input
@@ -119,18 +86,18 @@
                                 autocomplete="name"
                                 required
                                 :value="user.name"
-                                class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold transition outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                                class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold transition focus:bg-canvas"
                             />
                             <span
                                 v-if="errors.name"
-                                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                                class="border-l border-red-600 pl-2 text-sm font-bold text-red-700"
                             >
                                 {{ errors.name }}
                             </span>
                         </label>
 
                         <label
-                            class="grid gap-2 text-sm font-black text-zinc-950"
+                            class="grid gap-2 text-sm font-semibold text-zinc-950"
                         >
                             Email
                             <input
@@ -139,11 +106,11 @@
                                 autocomplete="email"
                                 required
                                 :value="user.email"
-                                class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold transition outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                                class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold transition focus:bg-canvas"
                             />
                             <span
                                 v-if="errors.email"
-                                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                                class="border-l border-red-600 pl-2 text-sm font-bold text-red-700"
                             >
                                 {{ errors.email }}
                             </span>
@@ -153,14 +120,14 @@
                             <button
                                 type="submit"
                                 :disabled="processing"
-                                class="cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#18181b] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_#18181b]"
+                                class="cursor-pointer rounded-xl border border-stone-200 bg-primary px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                             >
                                 {{ processing ? 'Saving...' : 'Save details' }}
                             </button>
                             <p
                                 v-if="wasSuccessful"
                                 role="status"
-                                class="border-2 border-zinc-950 bg-[#77c8b5] px-3 py-1.5 text-sm font-black text-zinc-950"
+                                class="rounded-xl border border-stone-200 bg-mint px-3 py-1.5 text-sm font-semibold text-zinc-950"
                             >
                                 Saved.
                             </p>
@@ -168,20 +135,18 @@
                     </Form>
                 </article>
 
-                <article
-                    class="border-4 border-zinc-950 bg-white shadow-[7px_7px_0_#f4ce63]"
-                >
+                <article class="surface overflow-hidden">
                     <div
-                        class="flex items-start gap-4 border-b-3 border-zinc-950 bg-[#f7f1e7] p-5"
+                        class="flex items-start gap-4 border-b border-stone-200 bg-canvas p-5"
                     >
                         <div
-                            class="flex size-11 shrink-0 rotate-2 items-center justify-center border-3 border-zinc-950 bg-[#f4ce63] text-lg shadow-[3px_3px_0_#18181b]"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-butter text-lg"
                             aria-hidden="true"
                         >
-                            <i class="fa-solid fa-key"></i>
+                            <AppIcon name="fa-solid fa-key" />
                         </div>
                         <div>
-                            <h2 class="text-xl font-black text-zinc-950">
+                            <h2 class="text-xl font-semibold text-zinc-950">
                                 Password
                             </h2>
                             <p
@@ -203,7 +168,7 @@
                         class="grid gap-5 p-5 sm:p-6"
                     >
                         <label
-                            class="grid gap-2 text-sm font-black text-zinc-950"
+                            class="grid gap-2 text-sm font-semibold text-zinc-950"
                         >
                             Current password
                             <input
@@ -211,18 +176,18 @@
                                 type="password"
                                 autocomplete="current-password"
                                 required
-                                class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold transition outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                                class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold transition focus:bg-canvas"
                             />
                             <span
                                 v-if="errors.current_password"
-                                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                                class="border-l border-red-600 pl-2 text-sm font-bold text-red-700"
                             >
                                 {{ errors.current_password }}
                             </span>
                         </label>
 
                         <label
-                            class="grid gap-2 text-sm font-black text-zinc-950"
+                            class="grid gap-2 text-sm font-semibold text-zinc-950"
                         >
                             New password
                             <input
@@ -230,18 +195,18 @@
                                 type="password"
                                 autocomplete="new-password"
                                 required
-                                class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold transition outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                                class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold transition focus:bg-canvas"
                             />
                             <span
                                 v-if="errors.password"
-                                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                                class="border-l border-red-600 pl-2 text-sm font-bold text-red-700"
                             >
                                 {{ errors.password }}
                             </span>
                         </label>
 
                         <label
-                            class="grid gap-2 text-sm font-black text-zinc-950"
+                            class="grid gap-2 text-sm font-semibold text-zinc-950"
                         >
                             Confirm password
                             <input
@@ -249,11 +214,11 @@
                                 type="password"
                                 autocomplete="new-password"
                                 required
-                                class="border-3 border-zinc-950 bg-white px-3 py-2.5 text-base font-semibold transition outline-none focus:bg-[#fff9e8] focus:shadow-[4px_4px_0_#e06573]"
+                                class="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-base font-semibold transition focus:bg-canvas"
                             />
                             <span
                                 v-if="errors.password_confirmation"
-                                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                                class="border-l border-red-600 pl-2 text-sm font-bold text-red-700"
                             >
                                 {{ errors.password_confirmation }}
                             </span>
@@ -263,7 +228,7 @@
                             <button
                                 type="submit"
                                 :disabled="processing"
-                                class="cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#18181b] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_#18181b]"
+                                class="cursor-pointer rounded-xl border border-stone-200 bg-primary px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                             >
                                 {{
                                     processing
@@ -274,7 +239,7 @@
                             <p
                                 v-if="wasSuccessful"
                                 role="status"
-                                class="border-2 border-zinc-950 bg-[#77c8b5] px-3 py-1.5 text-sm font-black text-zinc-950"
+                                class="rounded-xl border border-stone-200 bg-mint px-3 py-1.5 text-sm font-semibold text-zinc-950"
                             >
                                 Updated.
                             </p>
@@ -282,11 +247,52 @@
                     </Form>
                 </article>
             </section>
+            <section
+                v-if="family.length"
+                class="surface p-5"
+                aria-labelledby="family-heading"
+            >
+                <h2 id="family-heading" class="story-font text-2xl">
+                    Sharing this story
+                </h2>
+                <p class="mt-1 text-sm text-stone-500">
+                    The people making these memories together.
+                </p>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                    <Link
+                        v-for="member in family"
+                        :key="member.username"
+                        :href="home({ query: { author: member.username } })"
+                        class="flex min-h-14 items-center gap-3 rounded-xl p-2 hover:bg-lilac"
+                    >
+                        <img
+                            v-if="member.photo"
+                            :src="member.photo"
+                            :alt="member.name"
+                            class="size-10 rounded-full object-cover"
+                        />
+                        <span
+                            v-else
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint text-sm font-semibold"
+                            >{{ member.name.slice(0, 1) }}</span
+                        >
+                        <span class="min-w-0"
+                            ><span
+                                class="block truncate text-sm font-semibold"
+                                >{{ member.name }}</span
+                            ><span class="block truncate text-xs text-stone-500"
+                                >@{{ member.username }}</span
+                            ></span
+                        >
+                    </Link>
+                </div>
+            </section>
         </section>
 
         <Modal
             :show="activeModal === 'post'"
-            title="Preserve a new memory"
+            mobile-fullscreen
+            title="Add a memory"
             eyebrow="New memory"
             @close="activeModal = null"
         >
@@ -308,12 +314,14 @@
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TimelineManagementController from '@/actions/App/Http/Controllers/TimelineManagementController';
+import AppIcon from '@/components/AppIcon.vue';
 import Modal from '@/components/Modal.vue';
+import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import { logout } from '@/routes';
+import { home, logout } from '@/routes';
 import { update as updatePassword } from '@/routes/user-password';
 import { update as updateProfile } from '@/routes/user-profile-information';
 import type { PageProps } from '@/types';
@@ -324,6 +332,8 @@ type ActiveModal = 'post' | 'search' | null;
 
 const page = usePage<PageProps>();
 const activeModal = ref<ActiveModal>(null);
+
+const family = computed(() => Object.values(page.props.family));
 
 const user = computed(() => page.props.auth.user!);
 

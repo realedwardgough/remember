@@ -1,123 +1,139 @@
 <template>
-    <Teleport to="body">
-        <Transition
-            enter-active-class="transition duration-150 ease-out"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition duration-100 ease-in"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
-        >
-            <div
-                v-if="show"
-                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-zinc-950/70 px-4 py-6 backdrop-blur-[2px] sm:py-10"
-                role="presentation"
-                @click.self="emit('close')"
+    <DialogRoot :open="show" @update:open="onOpenChange">
+        <DialogPortal>
+            <DialogOverlay
+                class="fixed inset-0 z-50 bg-stone-950/35 backdrop-blur-sm"
+            />
+            <DialogContent
+                :aria-describedby="undefined"
+                class="fixed z-50 flex flex-col overflow-y-auto bg-canvas shadow-xl sm:top-1/2 sm:left-1/2 sm:max-h-[90dvh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+                :class="[
+                    wide ? 'sm:max-w-6xl' : 'sm:max-w-2xl',
+                    mobileFullscreen
+                        ? 'inset-0 h-dvh w-full sm:inset-auto sm:h-auto sm:w-[calc(100%-4rem)]'
+                        : 'top-1/2 left-1/2 max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-3xl',
+                ]"
+                @close-auto-focus.prevent="restoreFocus"
+                @escape-key-down.prevent="requestClose"
+                @pointer-down-outside.prevent="requestClose"
+                @interact-outside.prevent
             >
-                <Transition
-                    appear
-                    enter-active-class="transition duration-150 ease-out"
-                    enter-from-class="translate-y-3 scale-95 opacity-0"
-                    enter-to-class="translate-y-0 scale-100 opacity-100"
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="translate-y-0 scale-100 opacity-100"
-                    leave-to-class="translate-y-3 scale-95 opacity-0"
+                <header
+                    class="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b bg-canvas/95 px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 backdrop-blur sm:px-7"
                 >
-                    <section
-                        v-if="show"
-                        class="w-full max-w-2xl border-4 border-zinc-950 bg-[#fff9e8] shadow-[10px_10px_0_0_#e06573]"
-                        role="dialog"
-                        aria-modal="true"
-                        :aria-labelledby="titleId"
-                    >
-                        <header
-                            class="relative flex items-start justify-between gap-4 overflow-hidden border-b-4 border-zinc-950 bg-[#e06573] p-5 sm:p-6"
+                    <div>
+                        <p
+                            v-if="eyebrow"
+                            class="mb-1 text-xs font-medium text-primary"
                         >
-                            <div class="relative z-10">
-                                <p
-                                    class="w-fit -rotate-1 border-2 border-zinc-950 bg-[#f8cc5d] px-2 py-1 text-xs font-black tracking-[0.2em] text-zinc-950 uppercase shadow-[3px_3px_0_0_#18181b]"
-                                >
-                                    {{ eyebrow }}
-                                </p>
-                                <h2
-                                    :id="titleId"
-                                    class="mt-4 text-3xl leading-none font-black tracking-[-0.03em] text-white uppercase sm:text-4xl"
-                                >
-                                    {{ title }}
-                                </h2>
-                            </div>
-
-                            <button
-                                type="button"
-                                class="relative z-10 inline-flex size-10 shrink-0 cursor-pointer items-center justify-center border-3 border-zinc-950 bg-white text-zinc-950 shadow-[3px_3px_0_0_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-[#77c8b5] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#f8cc5d]"
-                                aria-label="Close modal"
-                                @click="emit('close')"
-                            >
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                            <div
-                                aria-hidden="true"
-                                class="absolute -right-8 -bottom-14 size-32 rotate-12 border-4 border-zinc-950 bg-[#77c8b5]"
-                            ></div>
-                        </header>
-
-                        <div class="p-5 sm:p-6">
-                            <slot />
-                        </div>
-                    </section>
-                </Transition>
-            </div>
-        </Transition>
-    </Teleport>
+                            {{ eyebrow }}
+                        </p>
+                        <DialogTitle class="story-font text-2xl">{{
+                            title
+                        }}</DialogTitle>
+                    </div>
+                    <button
+                        type="button"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-stone-600 hover:bg-lilac"
+                        aria-label="Close dialog"
+                        :disabled="state.busy || busy"
+                        @click="requestClose"
+                    >
+                        <X :size="20" />
+                    </button>
+                </header>
+                <div
+                    v-if="confirmDiscard"
+                    ref="discardPrompt"
+                    role="alert"
+                    class="mx-5 mt-4 rounded-2xl border border-rose-200 bg-blush p-4"
+                >
+                    <p class="font-semibold">Discard this unfinished memory?</p>
+                    <p class="mt-1 text-sm text-stone-600">
+                        Your writing and selected photos will be lost.
+                    </p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <button
+                            class="button-primary"
+                            @click="confirmDiscard = false"
+                        >
+                            Keep writing
+                        </button>
+                        <button
+                            class="button-secondary"
+                            :disabled="state.busy || busy"
+                            @click="emit('close')"
+                        >
+                            Discard memory
+                        </button>
+                    </div>
+                </div>
+                <div
+                    class="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7 sm:pt-6"
+                >
+                    <slot />
+                </div>
+            </DialogContent>
+        </DialogPortal>
+    </DialogRoot>
 </template>
-
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue';
-
+import { X } from 'lucide-vue-next';
+import {
+    DialogContent,
+    DialogOverlay,
+    DialogPortal,
+    DialogRoot,
+    DialogTitle,
+} from 'reka-ui';
+import { nextTick, provide, reactive, ref, watch } from 'vue';
+import { dialogStateKey } from '@/composables/useDialogState';
 const props = defineProps<{
     show: boolean;
     title: string;
     eyebrow?: string;
+    mobileFullscreen?: boolean;
+    wide?: boolean;
+    busy?: boolean;
 }>();
-
-const emit = defineEmits<{
-    close: [];
-}>();
-
-const titleId = computed(() => {
-    return `modal-${props.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-});
-
-const closeOnEscape = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-        emit('close');
-    }
+const emit = defineEmits<{ close: [] }>();
+const state = reactive({ dirty: false, busy: false });
+provide(dialogStateKey, state);
+const confirmDiscard = ref(false);
+const discardPrompt = ref<HTMLElement | null>(null);
+let previouslyFocused: HTMLElement | null = null;
+const restoreFocus = () => {
+    previouslyFocused?.focus();
 };
-
 watch(
     () => props.show,
-    (isShown) => {
-        if (typeof document === 'undefined') {
-            return;
+    (show) => {
+        if (show && typeof document !== 'undefined') {
+            previouslyFocused = document.activeElement as HTMLElement;
         }
 
-        document.body.classList.toggle('overflow-hidden', isShown);
-
-        if (isShown) {
-            document.addEventListener('keydown', closeOnEscape);
-        } else {
-            document.removeEventListener('keydown', closeOnEscape);
-        }
+        confirmDiscard.value = false;
+        state.dirty = false;
+        state.busy = false;
     },
-    { immediate: true },
 );
-
-onBeforeUnmount(() => {
-    if (typeof document === 'undefined') {
+const requestClose = () => {
+    if (state.busy || props.busy) {
         return;
     }
 
-    document.body.classList.remove('overflow-hidden');
-    document.removeEventListener('keydown', closeOnEscape);
-});
+    if (state.dirty) {
+        confirmDiscard.value = true;
+        nextTick(() => {
+            discardPrompt.value?.querySelector('button')?.focus();
+        });
+    } else {
+        emit('close');
+    }
+};
+const onOpenChange = (open: boolean) => {
+    if (!open) {
+        requestClose();
+    }
+};
 </script>

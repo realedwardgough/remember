@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Remember brings memories, milestones, events, photographs and private letters together in one shared family archive. It is built for small, invitation-only groups and wrapped in a colourful neo-brutalist interface that works across desktop and mobile.
+  Remember brings memories, milestones, events, photographs and private letters together in one shared family archive. It is built for small, invitation-only groups and wrapped in a soft, mobile-first interface with quick photo capture and a shared family timeline.
 </p>
 
 <p align="center">
