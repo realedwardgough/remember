@@ -65,7 +65,7 @@ return [
     */
 
     'package_freshness' => [
-        'minimum_age_days' => 1,
+        'minimum_age_days' => 0,
         'whitelist' => [
             'andreapollastri/checkpoint',
             'google/cloud-core',
