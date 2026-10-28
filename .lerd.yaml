@@ -1,0 +1,5 @@
+domains:
+  - remember
+secured: true
+services:
+  - mysql
