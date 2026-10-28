@@ -39,7 +39,7 @@ defineProps<{
 
                     <Link
                         :href="home()"
-                        class="inline-flex min-h-9 shrink-0 items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                        class="inline-flex min-h-11 shrink-0 items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800"
                     >
                         Back
                     </Link>

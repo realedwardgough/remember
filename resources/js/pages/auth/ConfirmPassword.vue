@@ -6,7 +6,7 @@ import { store } from '@/routes/password/confirm';
 
 <template>
     <main
-        class="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12 text-slate-950"
+        class="flex min-h-screen items-center justify-center bg-canvas px-6 py-12 text-slate-950"
     >
         <Head title="Confirm password" />
 
@@ -34,7 +34,7 @@ import { store } from '@/routes/password/confirm';
                         autocomplete="current-password"
                         required
                         autofocus
-                        class="rounded-md border border-slate-300 px-3 py-2 text-base font-normal outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="rounded-md border border-slate-300 px-3 py-2 text-base font-normal focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                     />
                     <span
                         v-if="errors.password"
@@ -46,7 +46,7 @@ import { store } from '@/routes/password/confirm';
                 <button
                     type="submit"
                     :disabled="processing"
-                    class="rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {{ processing ? 'Confirming...' : 'Confirm' }}
                 </button>

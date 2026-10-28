@@ -8,16 +8,14 @@
             @success="emit('close')"
             v-slot="{ errors, processing }"
         >
-            <label
-                class="grid gap-2 text-sm font-black text-zinc-950 uppercase"
-            >
+            <label class="grid gap-2 text-sm font-semibold text-zinc-950">
                 Title
                 <input
                     name="title"
                     type="text"
                     :value="post.title"
                     required
-                    class="min-h-12 border-3 border-zinc-950 bg-white px-4 py-3 text-base font-semibold normal-case outline-none focus:shadow-[4px_4px_0_0_#e06573]"
+                    class="min-h-12 rounded-xl border border-stone-200 bg-white px-4 py-3 text-base font-semibold normal-case"
                 />
                 <span
                     v-if="errors.title"
@@ -27,15 +25,13 @@
                 </span>
             </label>
 
-            <label
-                class="grid gap-2 text-sm font-black text-zinc-950 uppercase"
-            >
+            <label class="grid gap-2 text-sm font-semibold text-zinc-950">
                 Content
                 <textarea
                     name="content"
                     rows="6"
                     :value="post.content"
-                    class="border-3 border-zinc-950 bg-white px-4 py-3 text-base font-medium normal-case outline-none focus:shadow-[4px_4px_0_0_#e06573]"
+                    class="rounded-xl border border-stone-200 bg-white px-4 py-3 text-base font-medium normal-case"
                 ></textarea>
                 <span
                     v-if="errors.content"
@@ -46,18 +42,18 @@
             </label>
 
             <fieldset class="grid gap-2">
-                <legend class="text-sm font-black text-zinc-950 uppercase">
+                <legend class="text-sm font-semibold text-zinc-950">
                     Post type
                 </legend>
                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <label
                         v-for="type in postTypes"
                         :key="type"
-                        class="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 border-2 border-zinc-950 px-3 py-2 text-sm font-black transition-[box-shadow,translate,opacity] select-none"
+                        class="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm font-semibold transition-colors select-none has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-primary"
                         :class="[
                             typeClasses[type],
                             selectedPostType === type
-                                ? '-translate-x-0.5 -translate-y-0.5 shadow-[4px_4px_0_0_#18181b]'
+                                ? 'ring-2 ring-primary'
                                 : 'opacity-65 hover:opacity-100',
                         ]"
                     >
@@ -68,7 +64,7 @@
                             :value="type"
                             class="sr-only"
                         />
-                        <i :class="typeIcons[type]"></i>
+                        <AppIcon :name="typeIcons[type]" />
                         <span>{{ type }}</span>
                     </label>
                 </div>
@@ -80,16 +76,14 @@
                 </span>
             </fieldset>
 
-            <label
-                class="grid gap-2 text-sm font-black text-zinc-950 uppercase"
-            >
+            <label class="grid gap-2 text-sm font-semibold text-zinc-950">
                 Post date
                 <input
                     name="published_at"
                     type="date"
                     :value="post.publishedAt"
                     required
-                    class="min-h-12 border-3 border-zinc-950 bg-white px-4 py-3 text-base font-semibold normal-case outline-none focus:shadow-[4px_4px_0_0_#e06573]"
+                    class="min-h-12 rounded-xl border border-stone-200 bg-white px-4 py-3 text-base font-semibold normal-case"
                 />
                 <span
                     v-if="errors.published_at"
@@ -100,15 +94,15 @@
             </label>
 
             <div
-                class="flex flex-col-reverse gap-3 border-t-3 border-zinc-950 pt-5 sm:flex-row sm:items-center sm:justify-between"
+                class="flex flex-col-reverse gap-3 border-t border-stone-200 pt-5 sm:flex-row sm:items-center sm:justify-between"
             >
                 <button
                     type="button"
-                    class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 border-3 border-zinc-950 bg-white px-4 py-2 text-sm font-black text-red-700 shadow-[3px_3px_0_0_#18181b] hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="deleteProcessing"
                     @click="showDeleteConfirmation = true"
                 >
-                    <i class="fa-solid fa-trash"></i>
+                    <AppIcon name="fa-solid fa-trash" />
                     {{ deleteProcessing ? 'Deleting...' : 'Delete post' }}
                 </button>
 
@@ -116,21 +110,21 @@
                     <Link
                         v-if="cancelHref"
                         :href="cancelHref"
-                        class="inline-flex min-h-10 cursor-pointer items-center border-3 border-zinc-950 bg-white px-4 py-2 text-sm font-black text-zinc-700 hover:bg-[#fff0b8]"
+                        class="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-butter"
                     >
                         Cancel
                     </Link>
                     <button
                         v-else
                         type="button"
-                        class="inline-flex min-h-10 cursor-pointer items-center border-3 border-zinc-950 bg-white px-4 py-2 text-sm font-black text-zinc-700 hover:bg-[#fff0b8]"
+                        class="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-butter"
                         @click="emit('close')"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        class="inline-flex min-h-10 cursor-pointer items-center border-3 border-zinc-950 bg-[#e06573] px-4 py-2 text-sm font-black text-white shadow-[4px_4px_0_0_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                        class="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-stone-200 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                         :disabled="processing"
                     >
                         {{ processing ? 'Saving...' : 'Save changes' }}
@@ -157,6 +151,7 @@
 import type { LinkComponentBaseProps } from '@inertiajs/core';
 import { Form, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import AppIcon from '@/components/AppIcon.vue';
 import ConfirmModal from '@/components/ConfirmModal.vue';
 import { destroy, update } from '@/routes/posts';
 import type { TimelinePostType } from '@/types';
@@ -185,9 +180,9 @@ const selectedPostType = ref<TimelinePostType>(props.post.postType);
 
 const typeClasses: Record<TimelinePostType, string> = {
     Memory: 'bg-white text-zinc-800',
-    Milestone: 'bg-[#fff0b8] text-zinc-800',
-    Event: 'bg-[#b9eadf] text-zinc-800',
-    Letter: 'bg-[#eee6ff] text-zinc-800',
+    Milestone: 'bg-butter text-zinc-800',
+    Event: 'bg-mint text-zinc-800',
+    Letter: 'bg-lilac text-zinc-800',
 };
 
 const typeIcons: Record<TimelinePostType, string> = {

@@ -9,66 +9,30 @@
 
         <Head title="Gallery" />
 
-        <section class="grid gap-8 pb-24 md:pb-0">
-            <header
-                class="relative overflow-hidden border-4 border-zinc-950 bg-[#77c8b5] p-5 shadow-[8px_8px_0_#18181b] sm:p-8"
+        <section class="grid gap-6">
+            <PageHeader
+                title="A little look back"
+                eyebrow="Family photos"
+                description="All your captured moments, together in one place."
             >
-                <div
-                    class="absolute -top-12 -right-10 size-36 rotate-12 border-4 border-zinc-950 bg-[#f4ce63] sm:size-44"
-                    aria-hidden="true"
-                ></div>
-                <div
-                    class="absolute right-28 -bottom-14 size-28 -rotate-6 border-4 border-zinc-950 bg-[#e06573] sm:right-40 sm:size-36"
-                    aria-hidden="true"
-                ></div>
-
-                <p
-                    class="relative z-10 inline-flex border-3 border-zinc-950 bg-white px-3 py-1 text-xs font-black tracking-[0.2em] text-zinc-950 uppercase shadow-[3px_3px_0_#18181b]"
+                <span
+                    class="rounded-full bg-mint px-4 py-2 text-sm text-stone-600"
+                    >{{ images.length }}
+                    {{ images.length === 1 ? 'photo' : 'photos' }}</span
                 >
-                    Family gallery
-                </p>
-                <div
-                    class="relative z-10 mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between"
-                >
-                    <div class="max-w-2xl">
-                        <h1
-                            class="text-4xl leading-[0.95] font-black tracking-tight text-zinc-950 sm:text-6xl"
-                        >
-                            All the little moments
-                        </h1>
-                        <p
-                            class="mt-4 max-w-xl text-sm leading-6 font-semibold text-zinc-800 sm:text-base"
-                        >
-                            A visual wall of every image preserved in your
-                            shared timeline, gathered together in one place.
-                        </p>
-                    </div>
-
-                    <div
-                        class="w-fit shrink-0 border-3 border-zinc-950 bg-white px-4 py-3 font-black text-zinc-950 shadow-[4px_4px_0_#18181b]"
-                        aria-label="Gallery image count"
-                    >
-                        <span class="text-2xl leading-none">{{
-                            images.length
-                        }}</span>
-                        <span class="ml-1 text-xs tracking-wider uppercase">
-                            {{ images.length === 1 ? 'image' : 'images' }}
-                        </span>
-                    </div>
-                </div>
-            </header>
+            </PageHeader>
 
             <div
                 v-if="images.length === 0"
-                class="border-4 border-zinc-950 bg-white p-7 text-center shadow-[7px_7px_0_#f4ce63] sm:p-10"
+                class="rounded-xl border border-stone-200 bg-white p-7 text-center sm:p-10"
             >
                 <div
-                    class="mx-auto flex size-16 -rotate-3 items-center justify-center border-3 border-zinc-950 bg-[#e06573] text-2xl text-white shadow-[4px_4px_0_#18181b]"
+                    class="mx-auto flex size-16 items-center justify-center rounded-xl border border-stone-200 bg-primary text-2xl text-white"
                     aria-hidden="true"
                 >
-                    <i class="fa-solid fa-images"></i>
+                    <AppIcon name="fa-solid fa-images" />
                 </div>
-                <h2 class="mt-6 text-2xl font-black text-zinc-950">
+                <h2 class="mt-6 text-2xl font-semibold text-zinc-950">
                     Your gallery is ready
                 </h2>
                 <p
@@ -79,30 +43,34 @@
                 </p>
                 <button
                     type="button"
-                    class="mt-6 cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#18181b]"
+                    class="mt-6 cursor-pointer rounded-xl border border-stone-200 bg-primary px-4 py-2.5 text-sm font-semibold text-white transition"
                     @click="activeModal = 'post'"
                 >
-                    <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>
+                    <AppIcon
+                        name="fa-solid fa-plus"
+                        class="mr-2"
+                        aria-hidden="true"
+                    />
                     Add a memory
                 </button>
             </div>
 
             <div
                 v-else
-                class="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                class="grid grid-cols-2 items-stretch gap-3 xl:grid-cols-3"
             >
                 <article
                     v-for="image in images"
                     :key="image.id"
-                    class="group flex h-full flex-col border-4 border-zinc-950 bg-white p-2 shadow-[6px_6px_0_#18181b] transition duration-200 hover:-translate-y-1 hover:shadow-[9px_9px_0_#e06573]"
+                    class="group flex h-full flex-col rounded-xl border border-stone-200 bg-white p-2 transition duration-200 hover:-translate-y-1"
                 >
                     <button
                         type="button"
-                        class="block w-full cursor-zoom-in focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#e06573]"
+                        class="block w-full cursor-zoom-in focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
                         @click="selectedImage = image"
                     >
                         <div
-                            class="relative aspect-square overflow-hidden border-3 border-zinc-950 bg-[#f7f1e7]"
+                            class="relative aspect-square overflow-hidden rounded-xl border border-stone-200 bg-canvas"
                         >
                             <img
                                 :src="image.url"
@@ -111,18 +79,22 @@
                                 loading="lazy"
                             />
                             <div
-                                class="absolute top-3 right-3 flex size-10 items-center justify-center border-3 border-zinc-950 bg-white text-zinc-950 opacity-0 shadow-[3px_3px_0_#18181b] transition group-focus-within:opacity-100 group-hover:opacity-100"
+                                class="absolute top-3 right-3 flex size-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-zinc-950 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100"
                                 aria-hidden="true"
                             >
-                                <i class="fa-solid fa-up-right-from-square"></i>
+                                <AppIcon
+                                    name="fa-solid fa-up-right-from-square"
+                                />
                             </div>
                         </div>
                     </button>
 
-                    <div class="grid flex-1 gap-3 p-3 pt-4">
+                    <div
+                        class="grid min-w-0 flex-1 gap-3 px-1 py-3 sm:p-3 sm:pt-4"
+                    >
                         <div class="min-w-0">
                             <h2
-                                class="truncate text-base font-black text-zinc-950"
+                                class="truncate text-base font-semibold text-zinc-950"
                             >
                                 {{ image.postTitle ?? 'Timeline image' }}
                             </h2>
@@ -132,17 +104,17 @@
                         </div>
 
                         <div
-                            class="flex items-center justify-between gap-3 border-t-2 border-zinc-950 pt-3 text-xs font-bold text-zinc-600"
+                            class="flex flex-col items-start justify-between gap-2 border-t border-stone-200 pt-3 text-xs font-bold text-zinc-600 sm:flex-row sm:items-center"
                         >
                             <span>{{ formatFileSize(image.size) }}</span>
                             <a
                                 :href="image.downloadUrl"
-                                class="inline-flex items-center gap-2 border-2 border-zinc-950 bg-[#f4ce63] px-2.5 py-1.5 font-black text-zinc-950 shadow-[2px_2px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#18181b]"
+                                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-mint px-2.5 py-1.5 font-semibold text-zinc-950 transition"
                             >
-                                <i
-                                    class="fa-solid fa-download"
+                                <AppIcon
+                                    name="fa-solid fa-download"
                                     aria-hidden="true"
-                                ></i>
+                                />
                                 Download
                             </a>
                         </div>
@@ -160,7 +132,8 @@
 
         <Modal
             :show="activeModal === 'post'"
-            title="Preserve a new memory"
+            mobile-fullscreen
+            title="Add a memory"
             eyebrow="New memory"
             @close="activeModal = null"
         >
@@ -181,8 +154,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import AppIcon from '@/components/AppIcon.vue';
 import ImageViewer from '@/components/ImageViewer.vue';
 import Modal from '@/components/Modal.vue';
+import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';

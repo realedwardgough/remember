@@ -10,7 +10,7 @@
                         v-for="image in visibleImages"
                         :key="image.id"
                         type="button"
-                        class="group relative aspect-square cursor-zoom-in overflow-hidden rounded-md border border-slate-200 bg-slate-100 sm:w-[50%]"
+                        class="group relative aspect-[4/3] w-full cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:aspect-[16/9] sm:max-h-96"
                         @click="openImage(image)"
                     >
                         <img
@@ -29,7 +29,7 @@
                         v-for="image in visibleImages"
                         :key="image.id"
                         type="button"
-                        class="group relative aspect-square cursor-zoom-in overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+                        class="group relative aspect-[4/3] cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
                         @click="openImage(image)"
                     >
                         <img
@@ -45,7 +45,7 @@
             <button
                 v-if="post.images.length > imagePreviewLimit"
                 type="button"
-                class="justify-self-start rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                class="min-h-11 justify-self-start rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 @click="showAllImages = !showAllImages"
             >
                 {{
@@ -61,7 +61,7 @@
                 v-for="file in post.files"
                 :key="file.id"
                 :href="file.downloadUrl"
-                class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                class="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
             >
                 <span class="max-w-44 truncate">{{ file.name }}</span>
                 <span class="text-slate-400">Download</span>

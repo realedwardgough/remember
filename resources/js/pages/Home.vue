@@ -9,76 +9,71 @@
 
         <Head :title="timeline.name" />
 
-        <section class="grid content-start gap-8">
-            <header
-                class="relative overflow-hidden border-4 border-zinc-950 bg-[#e06573] p-6 shadow-[8px_8px_0_0_#18181b] sm:p-9"
-            >
-                <p
-                    class="relative z-10 w-fit -rotate-1 border-3 border-zinc-950 bg-[#f8cc5d] px-3 py-1.5 text-xs font-black tracking-[0.24em] text-zinc-950 uppercase shadow-[4px_4px_0_0_#18181b]"
-                >
-                    {{ timeline.name }}
-                </p>
-                <div
-                    class="relative z-10 mt-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
-                >
-                    <div class="max-w-2xl">
-                        <h1
-                            class="story-font text-5xl leading-none font-bold text-white sm:text-7xl"
-                        >
-                            All the little moments
-                        </h1>
-                        <p
-                            class="mt-4 max-w-xl text-sm leading-6 font-semibold text-zinc-950 sm:text-base"
-                        >
-                            {{
-                                timeline.description ||
-                                'A visual wall of every memory, milestone and event preserved in your shared timeline.'
-                            }}
-                        </p>
-                    </div>
+        <section class="grid content-start gap-6">
+            <header class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="mb-2 text-xs font-medium text-primary">
+                        Our family story
+                    </p>
+                    <h1 class="page-heading">
+                        All the little moments
+                        <span class="text-rose-400">♡</span>
+                    </h1>
+                    <p class="mt-3 max-w-xl text-sm leading-6 text-stone-500">
+                        {{
+                            timeline.description ||
+                            'Memories, milestones and letters from the people who love you.'
+                        }}
+                    </p>
                 </div>
-                <div
-                    aria-hidden="true"
-                    class="absolute -right-12 -bottom-16 size-44 rotate-12 border-4 border-zinc-950 bg-[#77c8b5] sm:size-56"
-                ></div>
+                <button
+                    type="button"
+                    class="button-primary hidden shrink-0 sm:flex"
+                    @click="activeModal = 'post'"
+                >
+                    + Add a memory
+                </button>
             </header>
-
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div
-                    class="hidden border-3 border-zinc-950 bg-white px-4 py-3 text-xs font-black tracking-[0.14em] uppercase shadow-[4px_4px_0_0_#e06573] sm:flex"
+            <nav
+                aria-label="Filter by post type"
+                class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
+            >
+                <Link
+                    :href="home({ query: { ...filters, type: undefined } })"
+                    class="type-chip"
+                    :class="
+                        !filters.type
+                            ? 'bg-primary text-white'
+                            : 'bg-white text-stone-600'
+                    "
+                    :aria-current="!filters.type ? 'page' : undefined"
+                    >All moments</Link
                 >
-                    {{ family_count }}
-                    {{
-                        family_count === 1 ? 'Family Member' : 'Family Members'
-                    }}
-                </div>
-
-                <div
-                    class="border-3 border-zinc-950 bg-white px-4 py-3 text-xs font-black tracking-[0.14em] uppercase shadow-[4px_4px_0_0_#f8cc5d]"
+                <Link
+                    v-for="type in postTypes"
+                    :key="type"
+                    :href="home({ query: { ...filters, type } })"
+                    class="type-chip"
+                    :class="
+                        filters.type === type
+                            ? 'bg-primary text-white'
+                            : 'bg-white text-stone-600'
+                    "
+                    :aria-current="filters.type === type ? 'page' : undefined"
+                    >{{
+                        {
+                            Memory: 'Memories',
+                            Milestone: 'Milestones',
+                            Letter: 'Letters',
+                            Event: 'Events',
+                        }[type]
+                    }}</Link
                 >
-                    {{ memories_count }}
-                    {{
-                        memories_count === 1
-                            ? 'Memory Shared'
-                            : 'Memories Shared'
-                    }}
-                </div>
-
-                <div
-                    class="hidden border-3 border-zinc-950 bg-white px-4 py-3 text-xs font-black tracking-[0.14em] uppercase shadow-[4px_4px_0_0_#77c8b5] sm:flex"
-                >
-                    {{ media_count }}
-                    {{
-                        media_count === 1
-                            ? 'Moment Captured'
-                            : 'Moments Captured'
-                    }}
-                </div>
-            </div>
+            </nav>
 
             <section
                 v-if="hasActiveFilters"
-                class="border-3 border-zinc-950 bg-white p-5 shadow-[5px_5px_0_0_#18181b]"
+                class="rounded-xl border border-stone-200 bg-white p-5"
                 aria-label="Active timeline filters"
             >
                 <div
@@ -86,7 +81,7 @@
                 >
                     <div>
                         <p
-                            class="text-xs font-black tracking-[0.2em] text-[#c84f65] uppercase"
+                            class="text-xs font-semibold tracking-normal text-primary"
                         >
                             Active filters
                         </p>
@@ -98,7 +93,7 @@
                     <Link
                         :href="home()"
                         preserve-scroll
-                        class="w-fit border-2 border-zinc-950 bg-[#f8cc5d] px-3 py-1.5 text-xs font-black text-zinc-950 shadow-[3px_3px_0_0_#18181b] hover:bg-[#e06573] hover:text-white"
+                        class="w-fit rounded-xl border border-stone-200 bg-butter px-3 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-primary hover:text-white"
                     >
                         Clear all
                     </Link>
@@ -110,11 +105,9 @@
                         :key="filter.key"
                     >
                         <span
-                            class="inline-flex items-center gap-2 border-2 border-zinc-950 bg-[#fff0b8] px-3 py-1.5 text-sm font-bold text-zinc-800"
+                            class="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-butter px-3 py-1.5 text-sm font-bold text-zinc-800"
                         >
-                            <span class="text-[#e06573]">{{
-                                filter.label
-                            }}</span>
+                            <span class="text-primary">{{ filter.label }}</span>
                             <span>{{ filter.value }}</span>
                             <Link
                                 :href="
@@ -123,10 +116,13 @@
                                     })
                                 "
                                 preserve-scroll
-                                class="inline-flex size-5 items-center justify-center border-2 border-zinc-950 bg-white text-zinc-700 hover:bg-[#e06573] hover:text-white"
+                                class="inline-flex size-11 items-center justify-center rounded-xl border border-stone-200 bg-white text-zinc-700 hover:bg-primary hover:text-white"
                                 :aria-label="`Clear ${filter.label} filter`"
                             >
-                                <i class="fa-solid fa-xmark text-[10px]"></i>
+                                <AppIcon
+                                    name="fa-solid fa-xmark"
+                                    class="text-[10px]"
+                                />
                             </Link>
                         </span>
                     </template>
@@ -142,7 +138,8 @@
 
         <Modal
             :show="activeModal === 'post'"
-            title="Preserve a new memory"
+            mobile-fullscreen
+            title="Add a memory"
             eyebrow="New memory"
             @close="closeModal"
         >
@@ -177,6 +174,7 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import AppIcon from '@/components/AppIcon.vue';
 import EditPostForm from '@/components/EditPostForm.vue';
 import type { EditableTimelinePost } from '@/components/EditPostForm.vue';
 import Feed from '@/components/Feed.vue';
@@ -196,10 +194,6 @@ import type {
 
 const page = usePage<PageProps>();
 const timeline = computed(() => page.props.timeline);
-
-const family_count = computed(() => page.props.family_count);
-const media_count = computed(() => page.props.media_count);
-const memories_count = computed(() => page.props.memories_count);
 
 type ActiveModal = 'post' | 'search' | 'edit' | null;
 

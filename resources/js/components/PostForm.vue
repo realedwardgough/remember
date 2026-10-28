@@ -1,314 +1,358 @@
 <template>
-    <Form
-        v-bind="store.form()"
-        reset-on-success
-        disable-while-processing
-        preserve-scroll
-        @success="handleSuccess"
-        class="h-fit self-start inert:pointer-events-none inert:opacity-60"
-        v-slot="{ errors, processing, progress, wasSuccessful }"
+    <form
+        class="grid gap-5"
+        :aria-busy="form.processing"
+        @submit.prevent="submit"
     >
-        <div class="flex items-start gap-4">
-            <div
-                class="hidden size-11 shrink-0 items-center justify-center border-3 border-zinc-950 bg-[#77c8b5] text-sm font-black text-zinc-950 shadow-[3px_3px_0_0_#18181b] sm:flex"
-                aria-hidden="true"
-            >
-                {{ userInitials }}
-            </div>
-
-            <div class="grid min-w-0 flex-1 gap-3.5">
-                <label for="composer-title" class="sr-only">Title</label>
-                <input
-                    id="composer-title"
-                    name="title"
-                    type="text"
-                    :placeholder="
-                        selectedType === 'Letter'
-                            ? 'Give your letter a title'
-                            : 'What memory are we preserving?'
-                    "
-                    class="min-h-12 w-full border-3 border-zinc-950 bg-white px-4 py-3 text-base font-bold text-zinc-950 transition-[box-shadow,translate] outline-none placeholder:font-medium placeholder:text-zinc-400 focus:-translate-x-0.5 focus:-translate-y-0.5 focus:shadow-[4px_4px_0_0_#e06573]"
-                    required
-                />
-                <p
-                    v-if="errors.title"
-                    class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
-                >
-                    {{ errors.title }}
-                </p>
-
-                <label for="composer-content" class="sr-only">Memory</label>
-                <textarea
-                    id="composer-content"
-                    name="content"
-                    :rows="selectedType === 'Letter' ? 9 : 4"
-                    :placeholder="
-                        selectedType === 'Letter'
-                            ? 'Write your private letter...'
-                            : 'Write a short update, milestone, or family moment...'
-                    "
-                    class="w-full resize-y border-3 border-zinc-950 bg-white px-4 py-3 text-sm leading-6 font-medium text-zinc-800 transition-[box-shadow,translate] outline-none placeholder:text-zinc-400 focus:-translate-x-0.5 focus:-translate-y-0.5 focus:shadow-[4px_4px_0_0_#e06573]"
-                    :class="
-                        selectedType === 'Letter' ? 'min-h-[300px]' : 'min-h-28'
-                    "
-                />
-                <p
-                    v-if="errors.content"
-                    class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
-                >
-                    {{ errors.content }}
-                </p>
-            </div>
-        </div>
-
-        <div class="mt-5 grid gap-5 border-t-3 border-zinc-950 pt-5">
-            <div class="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
-                <fieldset class="flex flex-wrap gap-2">
-                    <legend class="sr-only">Post type</legend>
+        <fieldset :disabled="form.processing" class="contents">
+            <fieldset>
+                <legend class="sr-only">Post type</legend>
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <label
                         v-for="type in postTypes"
                         :key="type"
-                        class="inline-flex min-h-10 cursor-pointer items-center gap-2 border-2 border-zinc-950 px-3 py-2 text-sm font-black transition-[box-shadow,translate] select-none"
-                        :class="[
-                            typeClasses[type],
-                            selectedType === type
-                                ? '-translate-x-0.5 -translate-y-0.5 shadow-[4px_4px_0_0_#18181b]'
-                                : 'opacity-65 hover:opacity-100',
-                        ]"
+                        class="relative flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 text-sm font-medium has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-primary"
+                        :class="
+                            form.post_type === type
+                                ? 'border-primary bg-lilac text-primary'
+                                : 'border-stone-200 bg-white text-stone-600'
+                        "
                     >
                         <input
+                            v-model="form.post_type"
                             type="radio"
                             name="post_type"
                             :value="type"
-                            class="size-4 accent-zinc-950"
-                            v-model="selectedType"
+                            class="sr-only"
                         />
-                        <i :class="typeIcons[type]"></i>
-                        <span>{{ type }}</span>
+                        <component
+                            :is="typeIcons[type]"
+                            :size="16"
+                            aria-hidden="true"
+                        />{{ type }}
                     </label>
-                </fieldset>
-
-                <div class="mt-2 flex flex-row justify-end gap-2 sm:mt-0">
-                    <button
-                        type="button"
-                        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 border-3 border-zinc-950 bg-white px-3 py-2 text-sm font-black text-zinc-950 shadow-[3px_3px_0_0_#18181b] hover:bg-[#fff0b8] sm:w-auto"
-                        :aria-expanded="showDatePicker"
-                        aria-controls="composer-date-panel"
-                        @click="showDatePicker = !showDatePicker"
-                    >
-                        <i class="fa-solid fa-calendar"></i>
-                    </button>
-                    <label
-                        for="composer-media"
-                        class="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 border-3 border-zinc-950 bg-white px-3 py-2 text-sm font-black text-zinc-950 shadow-[3px_3px_0_0_#18181b] hover:bg-[#b9eadf]"
-                    >
-                        <i class="fa-solid fa-upload"></i>
-                        <span class="md:hidden">Upload</span>
-                    </label>
-                    <input
-                        id="composer-media"
-                        ref="mediaInput"
-                        type="file"
-                        name="media[]"
-                        accept="image/*"
-                        multiple
-                        class="sr-only"
-                        @change="updateSelectedFiles"
-                    />
-                    <button
-                        type="submit"
-                        class="min-h-10 cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2 text-sm font-black text-white shadow-[4px_4px_0_0_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#18181b] disabled:cursor-not-allowed disabled:opacity-60"
-                        :disabled="processing"
-                    >
-                        {{ processing ? 'Posting...' : 'Post' }}
-                    </button>
                 </div>
-            </div>
-
+                <p v-if="form.errors.post_type" class="field-error mt-2">
+                    {{ form.errors.post_type }}
+                </p>
+            </fieldset>
             <p
-                v-if="errors.post_type"
-                class="border-l-4 border-red-600 pl-2 text-sm font-bold text-red-700"
+                v-if="form.post_type === 'Letter'"
+                class="flex items-center gap-2 rounded-xl bg-lilac p-3 text-sm text-primary"
             >
-                {{ errors.post_type }}
+                <LockKeyhole :size="17" class="shrink-0" /> Private letter —
+                only you can read it.
             </p>
-
-            <input
-                v-if="!showDatePicker"
-                type="hidden"
-                name="published_at"
-                :value="today"
-            />
-
-            <div
-                v-if="showDatePicker"
-                id="composer-date-panel"
-                class="grid gap-3 border-3 border-zinc-950 bg-[#fff0b8] p-4 shadow-[4px_4px_0_0_#f8cc5d] sm:max-w-xs"
-            >
-                <label
-                    for="composer-published-at"
-                    class="text-sm font-black text-zinc-950 uppercase"
-                >
-                    Timeline date
-                </label>
+            <section aria-labelledby="photo-label">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                    <h3 id="photo-label" class="text-sm font-semibold">
+                        Photos
+                        <span class="font-normal text-stone-400"
+                            >(optional)</span
+                        >
+                    </h3>
+                    <span class="text-xs text-stone-500"
+                        >{{ photos.length }}/10</span
+                    >
+                </div>
                 <input
-                    id="composer-published-at"
-                    type="date"
-                    name="published_at"
-                    :value="today"
-                    class="min-h-10 border-3 border-zinc-950 bg-white px-3 py-2 text-sm font-bold text-zinc-800 outline-none focus:shadow-[3px_3px_0_0_#e06573]"
-                    required
+                    id="composer-media"
+                    ref="mediaInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    multiple
+                    class="sr-only"
+                    @change="addPhotos"
                 />
-                <p class="text-xs leading-5 text-slate-500">
-                    Use this for scans, milestones, or older memories that
-                    should appear on a specific day.
-                </p>
-                <p v-if="errors.published_at" class="text-sm text-red-600">
-                    {{ errors.published_at }}
-                </p>
-            </div>
-
-            <div
-                v-if="selectedFiles.length"
-                class="grid gap-3 border-3 border-zinc-950 bg-[#b9eadf] p-4 shadow-[4px_4px_0_0_#77c8b5]"
-            >
-                <div class="flex items-center justify-between gap-2">
-                    <p class="text-sm font-semibold text-slate-700">
-                        {{ selectedFiles.length }}
-                        {{ selectedFiles.length === 1 ? 'file' : 'files' }}
-                        selected
-                    </p>
-                    <button
-                        type="button"
-                        class="border-2 border-zinc-950 bg-white px-2 py-1 text-xs font-black text-zinc-700 hover:bg-[#f8cc5d]"
-                        @click="clearSelectedFiles"
+                <div
+                    v-if="photos.length"
+                    class="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4"
+                >
+                    <div
+                        v-for="(photo, index) in photos"
+                        :key="photo.url"
+                        class="relative aspect-square"
                     >
-                        Clear
-                    </button>
+                        <img
+                            :src="photo.url"
+                            :alt="photo.file.name"
+                            class="size-full rounded-xl object-cover"
+                        />
+                        <button
+                            type="button"
+                            class="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-white/95 text-stone-700 shadow-sm"
+                            :aria-label="`Remove ${photo.file.name}`"
+                            @click="removePhoto(index)"
+                        >
+                            <X :size="18" />
+                        </button>
+                    </div>
                 </div>
-
-                <ul class="grid gap-2">
-                    <li
-                        v-for="file in selectedFiles"
-                        :key="`${file.name}-${file.size}`"
-                        class="flex min-w-0 items-center gap-2 text-sm text-slate-600"
-                    >
-                        <i class="fa-solid fa-paperclip text-slate-400"></i>
-                        <span class="min-w-0 flex-1 truncate">{{
-                            file.name
-                        }}</span>
-                        <span class="shrink-0 text-xs text-slate-400">
-                            {{ formatFileSize(file.size) }}
-                        </span>
-                    </li>
-                </ul>
+                <button
+                    type="button"
+                    class="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-violet-200 bg-lilac/40 py-5 text-sm font-medium text-primary hover:bg-lilac"
+                    :disabled="photos.length >= 10"
+                    @click="mediaInput?.click()"
+                >
+                    <ImagePlus :size="25" />{{
+                        photos.length
+                            ? 'Add more photos'
+                            : 'Add photos of this moment'
+                    }}
+                </button>
+                <p class="mt-2 text-xs leading-5 text-stone-500">
+                    Up to 10 photos, 10 MB each. JPG, PNG, WebP or GIF.
+                </p>
+                <p v-if="selectionError" role="alert" class="field-error mt-2">
+                    {{ selectionError }}
+                </p>
+                <p
+                    v-for="(error, key) in mediaErrors"
+                    :key="key"
+                    role="alert"
+                    class="field-error mt-2"
+                >
+                    {{ error }}
+                </p>
+            </section>
+            <label class="field-label" for="composer-title"
+                >Title<input
+                    id="composer-title"
+                    v-model="form.title"
+                    name="title"
+                    class="field"
+                    placeholder="Give this moment a name"
+                    required
+                    maxlength="255"
+                    :aria-invalid="!!form.errors.title"
+                    :aria-describedby="
+                        form.errors.title ? 'title-error' : undefined
+                    "
+                /><span
+                    v-if="form.errors.title"
+                    id="title-error"
+                    class="field-error"
+                    >{{ form.errors.title }}</span
+                ></label
+            >
+            <label class="field-label" for="composer-date"
+                >Date<input
+                    id="composer-date"
+                    v-model="form.published_at"
+                    name="published_at"
+                    type="date"
+                    class="field min-w-0"
+                    required
+                    :aria-invalid="!!form.errors.published_at"
+                /><span v-if="form.errors.published_at" class="field-error">{{
+                    form.errors.published_at
+                }}</span></label
+            >
+            <label class="field-label" for="composer-content"
+                >{{ form.post_type === 'Letter' ? 'Your letter' : 'The story' }}
+                <textarea
+                    id="composer-content"
+                    v-model="form.content"
+                    name="content"
+                    :rows="form.post_type === 'Letter' ? 8 : 4"
+                    class="field resize-y"
+                    :placeholder="
+                        form.post_type === 'Letter'
+                            ? 'Something you want to remember, just for you…'
+                            : 'What made this moment special?'
+                    "
+                    :aria-invalid="!!form.errors.content"
+                /><span v-if="form.errors.content" class="field-error">{{
+                    form.errors.content
+                }}</span></label
+            >
+            <p class="-mt-3 text-xs leading-5 text-stone-500">
+                Add #tags in your story to make moments easier to find.
+            </p>
+        </fieldset>
+        <footer
+            class="sticky bottom-0 -mx-5 border-t bg-canvas/95 px-5 pt-3 pb-[max(.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-7 sm:px-7"
+        >
+            <div v-if="form.progress" class="mb-3" role="status">
+                <p class="mb-1 text-xs text-primary">
+                    Uploading photos… {{ form.progress.percentage ?? 0 }}%
+                </p>
+                <progress
+                    :value="form.progress.percentage ?? 0"
+                    max="100"
+                    class="h-2 w-full accent-primary"
+                />
             </div>
-
-            <p v-if="errors.media" class="text-sm text-red-600">
-                {{ errors.media }}
+            <p v-if="submitError" role="alert" class="field-error mb-3">
+                {{ submitError }}
             </p>
-            <p v-if="errors['media.0']" class="text-sm text-red-600">
-                {{ errors['media.0'] }}
-            </p>
-
-            <progress
-                v-if="progress"
-                :value="progress.percentage"
-                max="100"
-                class="h-3 w-full overflow-hidden border-2 border-zinc-950"
+            <button
+                type="submit"
+                class="button-primary w-full"
+                :disabled="form.processing"
             >
-                {{ progress.percentage }}%
-            </progress>
-
-            <p
-                v-if="wasSuccessful"
-                class="text-sm font-medium text-emerald-700"
-            >
-                Post saved.
-            </p>
-        </div>
-    </Form>
+                <Check :size="18" />{{
+                    form.processing
+                        ? 'Saving your moment…'
+                        : form.post_type === 'Letter'
+                          ? 'Save private letter'
+                          : 'Save memory'
+                }}
+            </button>
+        </footer>
+    </form>
 </template>
-
 <script setup lang="ts">
-import { Form, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import {
+    CalendarDays,
+    Check,
+    Flag,
+    ImagePlus,
+    LockKeyhole,
+    Mail,
+    X,
+} from 'lucide-vue-next';
+import { computed, inject, onBeforeUnmount, ref, watchEffect } from 'vue';
 import { store } from '@/actions/App/Http/Controllers/PostController';
+import { dialogStateKey } from '@/composables/useDialogState';
 import type { PageProps, TimelinePostType } from '@/types';
-
-const emit = defineEmits<{
-    close: [];
-}>();
-
+const emit = defineEmits<{ close: [] }>();
 const page = usePage<PageProps>();
 const postTypes = computed(() => page.props.postTypes);
-const showDatePicker = ref(false);
-const mediaInput = ref<HTMLInputElement | null>(null);
-const selectedFiles = ref<File[]>([]);
-const selectedType = ref<TimelinePostType>('Memory');
-
-const typeClasses: Record<TimelinePostType, string> = {
-    Memory: 'bg-white text-zinc-800',
-    Milestone: 'bg-[#fff0b8] text-zinc-800',
-    Event: 'bg-[#b9eadf] text-zinc-800',
-    Letter: 'bg-[#eee6ff] text-zinc-800',
-};
-
-const typeIcons: Record<TimelinePostType, string> = {
-    Memory: 'fa-solid fa-camera-retro',
-    Milestone: 'fa-solid fa-star',
-    Event: 'fa-solid fa-calendar-day',
-    Letter: 'fa-solid fa-envelope-open-text',
-};
-
-const today = computed(() => {
-    const currentDate = new Date();
-    const timezoneOffset = currentDate.getTimezoneOffset() * 60000;
-
-    return new Date(currentDate.getTime() - timezoneOffset)
-        .toISOString()
-        .slice(0, 10);
+const dialog = inject(dialogStateKey, null);
+const date = new Date();
+const today = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+const form = useForm({
+    title: '',
+    content: '',
+    post_type: 'Memory' as TimelinePostType,
+    published_at: today,
+    media: [] as File[],
 });
-
-const updateSelectedFiles = (event: Event) => {
+const mediaInput = ref<HTMLInputElement | null>(null);
+const photos = ref<{ file: File; url: string }[]>([]);
+const selectionError = ref('');
+const submitError = ref('');
+const typeIcons = {
+    Memory: ImagePlus,
+    Milestone: Flag,
+    Event: CalendarDays,
+    Letter: Mail,
+};
+const mediaErrors = computed(() =>
+    Object.fromEntries(
+        Object.entries(form.errors).filter(
+            ([key]) => key === 'media' || key.startsWith('media.'),
+        ),
+    ),
+);
+watchEffect(() => {
+    if (dialog) {
+        dialog.dirty = form.isDirty;
+        dialog.busy = form.processing;
+    }
+});
+const addPhotos = (event: Event) => {
     const input = event.target as HTMLInputElement;
+    selectionError.value = '';
 
-    selectedFiles.value = Array.from(input.files ?? []);
+    for (const file of Array.from(input.files ?? [])) {
+        if (
+            photos.value.some(
+                (photo) =>
+                    photo.file.name === file.name &&
+                    photo.file.size === file.size &&
+                    photo.file.lastModified === file.lastModified,
+            )
+        ) {
+            continue;
+        }
+
+        if (photos.value.length >= 10) {
+            selectionError.value = 'You can add up to 10 photos to one memory.';
+            break;
+        }
+
+        if (
+            !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
+                file.type,
+            )
+        ) {
+            selectionError.value = 'Choose JPG, PNG, WebP or GIF photos.';
+            continue;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            selectionError.value = 'Each photo must be 10 MB or smaller.';
+            continue;
+        }
+
+        photos.value.push({ file, url: URL.createObjectURL(file) });
+    }
+
+    form.media = photos.value.map((photo) => photo.file);
+    input.value = '';
 };
+const removePhoto = (index: number) => {
+    URL.revokeObjectURL(photos.value[index].url);
+    photos.value.splice(index, 1);
+    form.media = photos.value.map((photo) => photo.file);
+    selectionError.value = '';
+    form.clearErrors();
+};
+const submit = () => {
+    if (form.processing) {
+        return;
+    }
 
-const clearSelectedFiles = () => {
-    selectedFiles.value = [];
+    submitError.value = '';
+    form.post(store.url(), {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
 
-    if (mediaInput.value) {
-        mediaInput.value.value = '';
+            if (dialog) {
+                dialog.dirty = false;
+            }
+
+            emit('close');
+        },
+        onNetworkError: () => {
+            submitError.value =
+                'The connection was interrupted. Your writing and photos are still here. Please try saving again.';
+
+            return false;
+        },
+        onHttpException: () => {
+            submitError.value =
+                'Your memory could not be saved. Your writing and photos are still here. Please try again.';
+
+            return false;
+        },
+        onError: () => {
+            submitError.value =
+                'Please check the highlighted fields. Your writing and photos are still here.';
+        },
+    });
+};
+const beforeUnload = (event: BeforeUnloadEvent) => {
+    if (form.isDirty || form.processing) {
+        event.preventDefault();
     }
 };
 
-const handleSuccess = () => {
-    clearSelectedFiles();
-    emit('close');
-};
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', beforeUnload);
+}
 
-const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) {
-        return `${bytes} B`;
+onBeforeUnmount(() => {
+    photos.value.forEach((photo) => URL.revokeObjectURL(photo.url));
+
+    if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', beforeUnload);
     }
-
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const userInitials = computed(() => {
-    const name = page.props.auth.user?.name ?? 'Family';
-
-    return name
-        .split(' ')
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
 });
 </script>

@@ -35,12 +35,12 @@ class DashboardTest extends TestCase
         $response = $this->get(route('home'));
         $response
             ->assertOk()
-            ->assertSee('name="theme-color" content="#e06573"', false)
+            ->assertSee('name="theme-color" content="#7150bd"', false)
             ->assertSee('viewport-fit=cover', false)
             ->assertSee('rel="manifest" href="/site.webmanifest"', false);
 
         $this->assertSame('standalone', $manifest['display']);
-        $this->assertSame('#fff9e8', $manifest['background_color']);
-        $this->assertSame('#e06573', $manifest['theme_color']);
+        $this->assertSame('#faf8f4', $manifest['background_color']);
+        $this->assertSame('#7150bd', $manifest['theme_color']);
     }
 }

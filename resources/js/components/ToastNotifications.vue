@@ -18,18 +18,19 @@
                     v-for="toast in toasts"
                     :key="toast.id"
                     type="button"
-                    class="pointer-events-auto flex w-full cursor-pointer items-start gap-3 border-3 border-zinc-950 bg-[#77c8b5] p-4 text-left text-zinc-950 shadow-[6px_6px_0_#18181b] transition hover:-translate-y-0.5"
+                    class="pointer-events-auto flex w-full cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-mint p-4 text-left text-zinc-950 transition"
                     :aria-label="`${toast.message}. Click to dismiss.`"
                     @click="dismiss(toast.id)"
                 >
-                    <i
-                        class="fa-solid fa-circle-check mt-0.5"
+                    <AppIcon
+                        name="fa-solid fa-circle-check"
+                        class="mt-0.5"
                         aria-hidden="true"
-                    ></i>
-                    <span class="min-w-0 flex-1 text-sm font-black">
+                    />
+                    <span class="min-w-0 flex-1 text-sm font-semibold">
                         {{ toast.message }}
                     </span>
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    <AppIcon name="fa-solid fa-xmark" aria-hidden="true" />
                 </button>
             </TransitionGroup>
         </div>
@@ -39,6 +40,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref } from 'vue';
+import AppIcon from '@/components/AppIcon.vue';
 
 type Toast = {
     id: number;

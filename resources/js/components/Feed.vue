@@ -1,74 +1,72 @@
 <template>
-    <section aria-labelledby="timeline-heading" class="mb-24 grid gap-2">
+    <section aria-label="Family timeline">
         <div
-            v-if="timelinePosts.data.length === 0"
-            class="border-3 border-dashed border-zinc-950 bg-white p-6 text-sm leading-6 font-semibold text-zinc-700 shadow-[5px_5px_0_0_#f8cc5d]"
+            v-if="!timelinePosts.data.length"
+            class="surface px-6 py-12 text-center"
         >
-            {{ emptyMessage }}
+            <Heart :size="32" class="mx-auto mb-4 text-primary" />
+            <h2 class="story-font text-2xl">
+                {{
+                    hasActiveFilters
+                        ? 'No moments found'
+                        : 'Your story starts here'
+                }}
+            </h2>
+            <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-stone-500">
+                {{
+                    hasActiveFilters
+                        ? 'Try another search or clear your filters to see more memories.'
+                        : 'Tap Add to save a photo, a little story or a moment you never want to forget.'
+                }}
+            </p>
         </div>
-
-        <InfiniteScroll
-            v-else
-            data="timelinePosts"
-            as="ol"
-            class="relative grid gap-14 before:absolute before:top-2 before:bottom-0 before:left-12 before:hidden before:w-1 before:bg-zinc-950 sm:gap-12 sm:before:block"
-        >
-            <template v-for="post in timelinePosts.data" :key="post.id">
-                <Event
-                    v-if="post.type === 'Event'"
+        <InfiniteScroll v-else data="timelinePosts" as="ol" class="grid gap-5">
+            <li
+                v-for="(post, index) in timelinePosts.data"
+                :key="post.id"
+                class="min-w-0"
+            >
+                <h2
+                    v-if="
+                        index === 0 ||
+                        monthKey(post) !==
+                            monthKey(timelinePosts.data[index - 1])
+                    "
+                    class="mb-4 flex items-center gap-3 text-sm font-semibold text-stone-600"
+                    :class="index > 0 ? 'mt-5' : ''"
+                >
+                    <span>{{ monthLabel(post) }}</span
+                    ><span
+                        class="h-px flex-1 bg-stone-200"
+                        aria-hidden="true"
+                    ></span>
+                </h2>
+                <TimelineCard
                     :post="post"
-                    @edit-post="emitEditPost($event)"
+                    @edit-post="emit('editPost', $event)"
                 />
-                <Memory
-                    v-if="post.type === 'Memory'"
-                    :post="post"
-                    @edit-post="emitEditPost($event)"
-                />
-                <Letter
-                    v-if="post.type === 'Letter'"
-                    :post="post"
-                    @edit-post="emitEditPost($event)"
-                />
-                <Milestone
-                    v-if="post.type === 'Milestone'"
-                    :post="post"
-                    @edit-post="emitEditPost($event)"
-                />
-            </template>
+            </li>
         </InfiniteScroll>
     </section>
 </template>
-
 <script setup lang="ts">
 import { InfiniteScroll } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import Event from '@/components/TimelinePostType/Event.vue';
-import Letter from '@/components/TimelinePostType/Letter.vue';
-import Memory from '@/components/TimelinePostType/Memory.vue';
-import Milestone from '@/components/TimelinePostType/Milestone.vue';
+import { Heart } from 'lucide-vue-next';
+import TimelineCard from '@/components/TimelineCard.vue';
 import type { PaginatedTimelinePosts, TimelinePost } from '@/types';
-
-const emit = defineEmits<{
-    editPost: [post: TimelinePost];
-}>();
-
-const emitEditPost = (post: TimelinePost) => {
-    emit('editPost', post);
-};
-
-const props = withDefaults(
+withDefaults(
     defineProps<{
         timelinePosts: PaginatedTimelinePosts;
         hasActiveFilters?: boolean;
     }>(),
-    {
-        hasActiveFilters: false,
-    },
+    { hasActiveFilters: false },
 );
-
-const emptyMessage = computed(() => {
-    return props.hasActiveFilters
-        ? 'No posts match those filters.'
-        : 'No posts yet. Create the first memory, milestone, event, or letter above.';
-});
+const emit = defineEmits<{ editPost: [post: TimelinePost] }>();
+const monthKey = (post: TimelinePost) => post.datetime.slice(0, 7);
+const monthLabel = (post: TimelinePost) =>
+    new Intl.DateTimeFormat('en-GB', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }).format(new Date(`${monthKey(post)}-01T00:00:00Z`));
 </script>

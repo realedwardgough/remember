@@ -1,14 +1,13 @@
 <template>
     <Modal
         :show="show"
+        :busy="processing"
         :title="title"
         :eyebrow="eyebrow"
         @close="emit('close')"
     >
         <div class="grid gap-6">
-            <div
-                class="border-3 border-zinc-950 bg-white p-4 shadow-[4px_4px_0_#f4ce63]"
-            >
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
                 <p class="text-base leading-6 font-bold text-zinc-800">
                     {{ message }}
                 </p>
@@ -19,7 +18,7 @@
                 <button
                     type="button"
                     :disabled="processing"
-                    class="min-h-11 cursor-pointer border-3 border-zinc-950 bg-white px-4 py-2.5 text-sm font-black text-zinc-950 shadow-[3px_3px_0_#18181b] transition hover:-translate-y-0.5 hover:bg-[#f7f1e7] disabled:cursor-not-allowed disabled:opacity-60"
+                    class="min-h-11 cursor-pointer rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-60"
                     @click="emit('close')"
                 >
                     {{ cancelLabel }}
@@ -27,10 +26,13 @@
                 <button
                     type="button"
                     :disabled="processing"
-                    class="min-h-11 cursor-pointer border-3 border-zinc-950 bg-[#e06573] px-4 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_#18181b] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#18181b] disabled:cursor-not-allowed disabled:opacity-60"
+                    class="min-h-11 cursor-pointer rounded-xl border border-stone-200 bg-primary px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
                     @click="emit('confirm')"
                 >
-                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                    <AppIcon
+                        name="fa-solid fa-triangle-exclamation"
+                        class="mr-2"
+                    />
                     {{ processing ? processingLabel : confirmLabel }}
                 </button>
             </div>
@@ -39,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '@/components/AppIcon.vue';
 import Modal from '@/components/Modal.vue';
 
 withDefaults(
