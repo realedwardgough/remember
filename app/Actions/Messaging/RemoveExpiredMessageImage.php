@@ -27,7 +27,9 @@ class RemoveExpiredMessageImage
             }
             if ($attachment->disk !== 'message_gcs'
                 || config('filesystems.disks.message_gcs.driver') !== 'gcs'
-                || ! config('filesystems.disks.message_gcs.bucket')) {
+                || config('filesystems.disks.message_gcs.visibility') !== 'private'
+                || ! config('filesystems.disks.message_gcs.bucket')
+                || config('filesystems.disks.message_gcs.bucket') === config('filesystems.disks.gcs.bucket')) {
                 throw new RuntimeException('Message image cleanup cannot operate on another disk.');
             }
             $disk = Storage::disk('message_gcs');
