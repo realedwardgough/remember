@@ -19,13 +19,14 @@
                     class="flex size-14 items-center justify-center rounded-full bg-lilac text-xl font-semibold text-primary"
                     >{{ initials }}</span
                 >
-                <Link
-                    :href="logout()"
-                    method="post"
-                    as="button"
+                <button
+                    type="button"
                     class="button-secondary"
-                    >Log out</Link
+                    :disabled="loggingOut"
+                    @click="logoutAccount"
                 >
+                    {{ loggingOut ? 'Logging out…' : 'Log out' }}
+                </button>
             </PageHeader>
 
             <Link
@@ -56,6 +57,8 @@
                     aria-hidden="true"
                 />
             </Link>
+
+            <NotificationSettings />
 
             <section class="grid items-start gap-6 xl:grid-cols-2">
                 <article class="surface overflow-hidden">
@@ -320,16 +323,18 @@
 </template>
 
 <script setup lang="ts">
-import { Form, Head, Link, usePage } from '@inertiajs/vue3';
+import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import TimelineManagementController from '@/actions/App/Http/Controllers/TimelineManagementController';
 import AppIcon from '@/components/AppIcon.vue';
 import Modal from '@/components/Modal.vue';
+import NotificationSettings from '@/components/NotificationSettings.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
+import { clearBrowserPush } from '@/lib/notifications';
 import { gallery, home, logout } from '@/routes';
 import { update as updatePassword } from '@/routes/user-password';
 import { update as updateProfile } from '@/routes/user-profile-information';
@@ -341,6 +346,35 @@ type ActiveModal = 'post' | 'search' | null;
 
 const page = usePage<PageProps>();
 const activeModal = ref<ActiveModal>(null);
+const loggingOut = ref(false);
+async function logoutAccount() {
+    if (loggingOut.value) {
+        return;
+    }
+
+    loggingOut.value = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+        await Promise.race([
+            clearBrowserPush().catch(() => {}),
+            new Promise<void>((resolve) => {
+                timer = setTimeout(resolve, 2000);
+            }),
+        ]);
+    } finally {
+        clearTimeout(timer);
+        router.post(
+            logout().url,
+            {},
+            {
+                onFinish: () => {
+                    loggingOut.value = false;
+                },
+            },
+        );
+    }
+}
 
 const family = computed(() => Object.values(page.props.family));
 

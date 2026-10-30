@@ -44,6 +44,15 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    $router->prefix('api/notifications')->name('notifications.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
+        $controller = \App\Http\Controllers\NotificationSettingsController::class;
+        $router->get('/', [$controller, 'show'])->name('show');
+        $router->put('/preferences', [$controller, 'update'])->middleware('throttle:20,1')->name('update');
+        $router->post('/subscription', [$controller, 'subscribe'])->middleware('throttle:10,1')->name('subscribe');
+        $router->delete('/subscription', [$controller, 'unsubscribe'])->middleware('throttle:20,1')->name('unsubscribe');
+        $router->post('/test', [$controller, 'test'])->middleware('throttle:3,1')->name('test');
+    });
+
     $router->get('/messages', [MessagesPageController::class, 'index'])->name('messages.index');
     $router->get('/messages/{conversation}', [MessagesPageController::class, 'show'])->name('messages.show');
     $router->get('/messages/{conversation}/shared-posts/{message}', SharedPostController::class)->name('messages.shared-post');

@@ -88,6 +88,7 @@ class SendMessage
                 $attachment->update(['message_id' => $message->id]);
             }
 
+            app(\App\Services\Messaging\MessagePush::class)->prepare($message);
             $locked->touch();
             app(MessagingUpdates::class)->dispatch($locked->id, $message->id);
 
