@@ -81,6 +81,12 @@ export interface Family {
 export interface PageProps extends InertiaPageProps {
     unreadMessagesCount: number;
     messagingRealtime: RealtimeSettings;
+    messageImages: {
+        enabled: boolean;
+        retention_hours?: number | null;
+        max_attachments?: number;
+        max_upload_bytes?: number;
+    };
     family: Record<string, Family>;
     remember: { emailNotificationsEnabled: boolean };
     timeline: { name: string; description: string | null };

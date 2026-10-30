@@ -1,6 +1,6 @@
 <template>
     <section
-        class="surface flex min-h-0 flex-1 flex-col overflow-hidden"
+        class="conversation-panel surface flex min-h-0 flex-1 flex-col overflow-hidden"
         aria-label="Conversation"
     >
         <header class="flex shrink-0 items-center gap-3 border-b px-4 py-3">
@@ -122,6 +122,7 @@
                                 }}
                             </p>
                             <p
+                                v-if="message.body"
                                 class="rounded-2xl px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] whitespace-pre-wrap"
                                 :class="
                                     message.sender.is_self
@@ -131,6 +132,14 @@
                             >
                                 {{ message.body }}
                             </p>
+                            <MessagePhoto
+                                v-for="attachment in message.attachments"
+                                :key="attachment.id"
+                                :attachment="attachment"
+                                :now="typingClock"
+                                @check="refreshMessage(message.id)"
+                                @loaded="photoLoaded"
+                            />
                             <time
                                 :datetime="message.created_at"
                                 class="mt-1 block px-1 text-[11px] text-stone-500"
@@ -148,7 +157,18 @@
                     class="flex justify-end"
                 >
                     <div class="max-w-[88%] sm:max-w-[80%]">
+                        <div
+                            v-if="pending.photos.length"
+                            class="mb-2 flex flex-wrap justify-end gap-2"
+                        >
+                            <PhotoPreview
+                                v-for="photo in pending.photos"
+                                :key="photo.requestId"
+                                :file="photo.file"
+                            />
+                        </div>
                         <p
+                            v-if="pending.body"
                             class="rounded-2xl rounded-br-sm bg-lilac px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere] whitespace-pre-wrap"
                         >
                             {{ pending.body }}
@@ -172,6 +192,13 @@
                                 @click="deliver(pending)"
                             >
                                 Retry message
+                            </button>
+                            <button
+                                type="button"
+                                class="ml-4 min-h-11 text-stone-500 underline"
+                                @click="dismissRetry(pending)"
+                            >
+                                Dismiss retry
                             </button>
                         </div>
                     </div>
@@ -212,6 +239,9 @@
         <MessageComposer
             v-if="!conversation || conversation.can_send"
             v-model="draft.body"
+            v-model:photos="draft.photos"
+            :images-enabled="page.props.messageImages.enabled"
+            :retention-hours="page.props.messageImages.retention_hours ?? null"
             :disabled="
                 !conversation || loading || messagingConnection === 'expired'
             "
@@ -221,7 +251,7 @@
     </section>
 </template>
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, MessageCircle, RefreshCw } from 'lucide-vue-next';
 import {
     computed,
@@ -234,28 +264,40 @@ import {
     watch,
 } from 'vue';
 import MessageComposer from '@/components/messaging/MessageComposer.vue';
+import MessagePhoto from '@/components/messaging/MessagePhoto.vue';
+import PhotoPreview from '@/components/messaging/PhotoPreview.vue';
 import { messageDraftsKey } from '@/composables/useMessageDrafts';
-import { messageError, messageTime, messagingRequest } from '@/lib/messaging';
+import {
+    MessagingRequestError,
+    messageError,
+    messageTime,
+    messagingRequest,
+} from '@/lib/messaging';
 import {
     listenToConversation,
     messagingConnection,
 } from '@/lib/messaging-live';
-import type { TypingChange } from '@/lib/messaging-live';
+import type { LiveChange, TypingChange } from '@/lib/messaging-live';
 import { index as messagesIndex } from '@/routes/messages';
 import {
     read as readRoute,
+    message as messageRoute,
     typing as typingRoute,
     send as sendRoute,
     show as historyRoute,
 } from '@/routes/messaging';
+import * as attachmentRoutes from '@/routes/messaging/attachments';
+import type { PageProps } from '@/types';
 import type {
     DirectConversation,
+    MessageAttachment,
     DirectMessage,
     MessageHistory,
     PendingMessage,
 } from '@/types/messaging';
 
 const props = defineProps<{ conversationId: number; obscured: boolean }>();
+const page = usePage<PageProps>();
 const drafts = inject(messageDraftsKey)!;
 const draft = drafts.forConversation(props.conversationId);
 const emit = defineEmits<{
@@ -306,6 +348,51 @@ let sentTyping = false;
 let typingTimeout: ReturnType<typeof setTimeout> | undefined;
 let typingTimer: ReturnType<typeof setInterval> | undefined;
 let stopLive: (() => void) | undefined;
+const checkingPhotos = new Set<number>();
+async function refreshMessage(id: number) {
+    if (!alive || checkingPhotos.has(id)) {
+        return;
+    }
+
+    checkingPhotos.add(id);
+
+    try {
+        const response = await messagingRequest<{ data: DirectMessage }>(
+            messageRoute.url({
+                conversation: props.conversationId,
+                message: id,
+            }),
+            { signal: controller.signal },
+        );
+
+        if (alive) {
+            merge([response.data]);
+        }
+    } catch {
+        /* Polling or a later live update will retry unavailable photo metadata. */
+    } finally {
+        checkingPhotos.delete(id);
+    }
+}
+function photoLoaded() {
+    if (hasNewMessages.value || !nearBottom()) {
+        return;
+    }
+
+    void bottom();
+}
+function liveChanged(event: LiveChange) {
+    clearTyping();
+
+    if (
+        event.message_id &&
+        messages.value.some((message) => message.id === event.message_id)
+    ) {
+        void refreshMessage(event.message_id);
+    }
+
+    requestSync();
+}
 let syncing = false;
 let syncQueued = false;
 let syncTimer: ReturnType<typeof setTimeout> | undefined;
@@ -630,17 +717,22 @@ async function sendDraft() {
     stopTyping();
     const body = draft.body.trim();
 
-    if (!body || !conversation.value?.can_send) {
+    if ((!body && !draft.photos.length) || !conversation.value?.can_send) {
         return;
     }
 
     const pending = reactive<PendingMessage>({
         requestId: crypto.randomUUID(),
         body,
+        photos: draft.photos.map((file) => ({
+            file,
+            requestId: crypto.randomUUID(),
+        })),
         status: 'sending',
     });
     draft.pending.push(pending);
     draft.body = '';
+    draft.photos = [];
     await bottom();
     await deliver(pending);
 }
@@ -649,6 +741,21 @@ async function deliver(pending: PendingMessage) {
     pending.error = undefined;
 
     try {
+        for (const photo of pending.photos) {
+            if (!photo.uploaded) {
+                const form = new FormData();
+                form.append('image', photo.file);
+                form.append('client_request_id', photo.requestId);
+                const uploaded = await messagingRequest<{
+                    data: MessageAttachment;
+                }>(attachmentRoutes.store.url(props.conversationId), {
+                    method: 'POST',
+                    body: form,
+                });
+                photo.uploaded = uploaded.data;
+            }
+        }
+
         const response = await messagingRequest<{ data: DirectMessage }>(
             sendRoute.url(props.conversationId),
             {
@@ -656,6 +763,9 @@ async function deliver(pending: PendingMessage) {
                 body: {
                     body: pending.body,
                     client_request_id: pending.requestId,
+                    attachment_ids: pending.photos.map(
+                        (photo) => photo.uploaded!.id,
+                    ),
                 },
             },
         );
@@ -674,8 +784,29 @@ async function deliver(pending: PendingMessage) {
             await bottom();
         }
     } catch (failure) {
+        if (
+            failure instanceof MessagingRequestError &&
+            failure.status === 422 &&
+            failure.fields.includes('attachment_ids')
+        ) {
+            // This validation error confirms the send was not accepted; a retry can safely upload fresh copies.
+            pending.photos.forEach((photo) => {
+                photo.uploaded = undefined;
+                photo.requestId = crypto.randomUUID();
+            });
+        }
+
         pending.status = 'failed';
         pending.error = messageError(failure);
+    }
+}
+function dismissRetry(pending: PendingMessage) {
+    const index = draft.pending.findIndex(
+        (message) => message.requestId === pending.requestId,
+    );
+
+    if (index !== -1) {
+        draft.pending.splice(index, 1);
     }
 }
 function onVisibility() {
@@ -713,10 +844,7 @@ watch(
 );
 onMounted(() => {
     stopLive = listenToConversation(props.conversationId, {
-        changed: () => {
-            clearTyping();
-            requestSync();
-        },
+        changed: liveChanged,
         typing: receiveTyping,
         ready: requestSync,
         disconnected: () => {

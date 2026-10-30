@@ -16,6 +16,7 @@ return [
     */
 
     'email_notifications' => env(key: 'EMAIL_NOTIFICATIONS', default: false),
+    'message_images' => ['retention_hours' => env('MESSAGE_IMAGE_RETENTION_HOURS', 48)],
 
     'realtime' => [
         'enabled' => env('BROADCAST_CONNECTION') === 'reverb',

@@ -16,6 +16,7 @@ class MessageResource extends JsonResource
             'conversation_id' => $this->conversation_id,
             'sender' => new ParticipantResource($this->sender),
             'body' => $this->body,
+            'attachments' => MessageAttachmentResource::collection($this->whenLoaded('attachments')),
             'client_request_id' => $this->sender->user_id === $request->user()->id ? $this->client_request_id : null,
             'created_at' => $this->created_at->toISOString(),
         ];

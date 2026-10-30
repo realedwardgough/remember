@@ -2,6 +2,7 @@ export class MessagingRequestError extends Error {
     constructor(
         message: string,
         public readonly status: number,
+        public readonly fields: string[] = [],
     ) {
         super(message);
     }
@@ -22,14 +23,18 @@ export async function messagingRequest<T>(
         signal: options.signal,
         headers: {
             Accept: 'application/json',
-            'Content-Type': 'application/json',
+            ...(options.body instanceof FormData
+                ? {}
+                : { 'Content-Type': 'application/json' }),
             'X-Requested-With': 'XMLHttpRequest',
             ...(token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {}),
         },
         body:
-            options.body === undefined
-                ? undefined
-                : JSON.stringify(options.body),
+            options.body instanceof FormData
+                ? options.body
+                : options.body === undefined
+                  ? undefined
+                  : JSON.stringify(options.body),
     });
 
     if (!response.ok) {
@@ -46,7 +51,11 @@ export async function messagingRequest<T>(
                       ? validation
                       : 'We couldn’t complete that request. Please try again.';
 
-        throw new MessagingRequestError(message, response.status);
+        throw new MessagingRequestError(
+            message,
+            response.status,
+            Object.keys(data.errors ?? {}),
+        );
     }
 
     return response.status === 204 ? (undefined as T) : response.json();

@@ -16,6 +16,7 @@ use App\Events\Messaging\TypingChanged;
 use App\Http\Resources\Messaging\ConversationResource;
 use App\Http\Resources\Messaging\MessageResource;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\MessagingParticipant;
 use App\Models\User;
 use App\Queries\GetUnreadMessageCount;
@@ -61,7 +62,7 @@ class MessagingController extends Controller
     {
         $participantId = MessagingParticipant::query()->where('user_id', $request->user()->id)->value('id');
         $conversations = Conversation::query()->forUser($request->user())
-            ->with(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user'])
+            ->with(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments'])
             ->withCount(['messages as unread_count' => function (Builder $messages) use ($participantId): void {
                 $messages->where('sender_participant_id', '!=', $participantId)
                     ->whereRaw('messages.id > COALESCE((SELECT last_read_message_id FROM conversation_memberships WHERE conversation_memberships.conversation_id = conversations.id AND participant_id = ?), 0)', [$participantId]);
@@ -78,7 +79,7 @@ class MessagingController extends Controller
     public function store(StartConversationRequest $request, StartConversation $start): JsonResponse
     {
         $conversation = $start->handle($request->user(), $request->integer('recipient_id'));
-        $conversation->load(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user']);
+        $conversation->load(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments']);
 
         return (new ConversationResource($conversation))->response()->setStatusCode($conversation->wasRecentlyCreated ? 201 : 200);
     }
@@ -93,7 +94,7 @@ class MessagingController extends Controller
 
         $after = $request->integer('after_id');
         $before = $request->integer('before_id');
-        $query = $conversation->messages()->with('sender.user')
+        $query = $conversation->messages()->with(['sender.user', 'attachments'])
             ->when($before, fn ($query) => $query->where('id', '<', $before))
             ->when($after, fn ($query) => $query->where('id', '>', $after));
         $messages = ($after ? $query->orderBy('id') : $query->orderByDesc('id'))->limit(51)->get();
@@ -113,15 +114,25 @@ class MessagingController extends Controller
         ]);
     }
 
+    public function message(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        Gate::authorize('view', $conversation);
+        abort_unless($message->conversation_id === $conversation->id, 404);
+        $message->load(['sender.user', 'attachments']);
+
+        return (new MessageResource($message))->response();
+    }
+
     public function send(SendMessageRequest $request, Conversation $conversation, SendMessage $send): JsonResponse
     {
         $message = $send->handle(
             $request->user(),
             $conversation,
-            $request->validated('body'),
+            $request->validated('body') ?? '',
             $request->validated('client_request_id'),
+            $request->validated('attachment_ids') ?? [],
         );
-        $message->load('sender.user');
+        $message->load(['sender.user', 'attachments']);
 
         return (new MessageResource($message))->response()->setStatusCode($message->wasRecentlyCreated ? 201 : 200);
     }

@@ -21,7 +21,7 @@ export type TypingChange = {
     typing: boolean;
 };
 type ConversationListener = {
-    changed: () => void;
+    changed: (event: LiveChange) => void;
     typing: (event: TypingChange) => void;
     ready: () => void;
     disconnected: () => void;
@@ -53,7 +53,7 @@ function changed(event: LiveChange) {
     updates.forEach((callback) => callback(event));
     conversations.forEach((listeners, id) => {
         if (event.conversation_id === null || event.conversation_id === id) {
-            listeners.forEach((listener) => listener.changed());
+            listeners.forEach((listener) => listener.changed(event));
         }
     });
     clearTimeout(badgeTimer);
@@ -111,8 +111,10 @@ function joinConversation(id: number) {
     }
 
     echo.join(`messaging.conversations.${id}`)
-        .listen('.messaging.changed', () =>
-            conversations.get(id)?.forEach((listener) => listener.changed()),
+        .listen('.messaging.changed', (event: LiveChange) =>
+            conversations
+                .get(id)
+                ?.forEach((listener) => listener.changed(event)),
         )
         .listen('.messaging.typing', (event: TypingChange) =>
             conversations

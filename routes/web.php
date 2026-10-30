@@ -9,6 +9,7 @@ use App\Http\Controllers\HeartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\MessageAttachmentController;
 use App\Http\Controllers\MessagesPageController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -53,6 +54,9 @@ Route::middleware('auth')->group(function (Router $router): void {
         $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1')->name('read');
         $router->post('/conversations/{conversation}/typing', [MessagingController::class, 'typing'])->middleware('throttle:90,1')->name('typing');
         $router->get('/session', [MessagingController::class, 'session'])->name('session');
+        $router->post('/conversations/{conversation}/attachments', [MessageAttachmentController::class, 'store'])->middleware('throttle:12,1')->name('attachments.store');
+        $router->get('/attachments/{attachment}', [MessageAttachmentController::class, 'show'])->name('attachments.show');
+        $router->get('/conversations/{conversation}/messages/{message}', [MessagingController::class, 'message'])->name('message');
     });
 
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');

@@ -8,7 +8,7 @@ export function createMessageDrafts() {
 
     return {
         forConversation(id: number): ConversationDraft {
-            drafts[id] ??= { body: '', pending: [] };
+            drafts[id] ??= { body: '', photos: [], pending: [] };
 
             return drafts[id];
         },

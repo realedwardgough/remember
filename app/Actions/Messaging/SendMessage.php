@@ -6,6 +6,8 @@ namespace App\Actions\Messaging;
 
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\MessageAttachment;
+use App\Services\Messaging\MessageImageSettings;
 use App\Models\MessagingParticipant;
 use App\Models\User;
 use App\Services\Messaging\MessagingUpdates;
@@ -15,18 +17,24 @@ use Illuminate\Validation\ValidationException;
 
 class SendMessage
 {
-    public function handle(User $actor, Conversation $conversation, string $body, string $clientRequestId): Message
+    public function handle(User $actor, Conversation $conversation, string $body, string $clientRequestId, array $attachmentIds = []): Message
     {
         Gate::forUser($actor)->authorize('view', $conversation);
 
         $body = trim($body);
         $clientRequestId = strtolower($clientRequestId);
 
-        if ($body === '' || mb_strlen($body) > 10000) {
+        if (($body === '' && $attachmentIds === []) || mb_strlen($body) > 10000) {
             throw ValidationException::withMessages(['body' => 'Enter a message of up to 10,000 characters.']);
         }
 
-        return DB::transaction(function () use ($actor, $conversation, $body, $clientRequestId): Message {
+        $attachmentIds = array_map(intval(...), $attachmentIds);
+        sort($attachmentIds);
+        if (count($attachmentIds) > MessageImageSettings::MAX_ATTACHMENTS || count(array_unique($attachmentIds)) !== count($attachmentIds)) {
+            throw ValidationException::withMessages(['attachment_ids' => 'Choose up to four different photos.']);
+        }
+
+        return DB::transaction(function () use ($actor, $conversation, $body, $clientRequestId, $attachmentIds): Message {
             $userIds = MessagingParticipant::query()
                 ->whereIn('id', [$conversation->first_participant_id, $conversation->second_participant_id])
                 ->whereNotNull('user_id')->pluck('user_id');
@@ -41,7 +49,7 @@ class SendMessage
                 ->where('client_request_id', $clientRequestId)->first();
 
             if ($existing !== null) {
-                if ($existing->conversation_id !== $locked->id || $existing->body !== $body) {
+                if ($existing->conversation_id !== $locked->id || $existing->body !== $body || $existing->attachments()->pluck('id')->all() !== $attachmentIds) {
                     throw ValidationException::withMessages(['client_request_id' => 'This request ID was already used for a different message.']);
                 }
 
@@ -50,12 +58,21 @@ class SendMessage
 
             Gate::forUser($actor)->authorize('send', $locked);
 
+            $attachments = MessageAttachment::query()->whereIn('id', $attachmentIds)->orderBy('id')->lockForUpdate()->get();
+            if ($attachments->count() !== count($attachmentIds) || $attachments->contains(fn (MessageAttachment $image): bool => $image->conversation_id !== $locked->id || $image->uploaded_by_participant_id !== $participant->id || $image->message_id !== null || ! $image->available())) {
+                throw ValidationException::withMessages(['attachment_ids' => 'One of these photos is unavailable. Please choose it again.']);
+            }
+
             $message = Message::query()->create([
                 'conversation_id' => $locked->id,
                 'sender_participant_id' => $participant->id,
                 'body' => $body,
                 'client_request_id' => $clientRequestId,
             ]);
+
+            foreach ($attachments as $attachment) {
+                $attachment->update(['message_id' => $message->id]);
+            }
 
             $locked->touch();
             app(MessagingUpdates::class)->dispatch($locked->id, $message->id);

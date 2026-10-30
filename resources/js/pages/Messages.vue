@@ -8,7 +8,13 @@
         <Head title="Messages" />
         <div
             class="messages-workspace flex min-h-0 flex-col gap-5"
-            :class="{ 'messages-workspace-open': conversationId }"
+            :class="{
+                'messages-workspace-open': conversationId,
+                'messages-compact':
+                    conversationId &&
+                    viewportHeight !== null &&
+                    viewportHeight < 600,
+            }"
             :style="workspaceStyle"
         >
             <PageHeader
@@ -285,9 +291,13 @@ const inboxLoading = ref(false);
 const inboxError = ref('');
 provide(messageDraftsKey, createMessageDrafts());
 const viewportHeight = ref<number | null>(null);
+const viewportOffset = ref(0);
 const workspaceStyle = computed(() =>
     viewportHeight.value
-        ? { '--messages-viewport': `${viewportHeight.value}px` }
+        ? {
+              '--messages-viewport': `${viewportHeight.value}px`,
+              '--messages-offset': `${viewportOffset.value}px`,
+          }
         : {},
 );
 const sortedInbox = computed(() =>
@@ -310,7 +320,7 @@ function preview(conversation: DirectConversation) {
     const message = conversation.latest_message;
 
     return message
-        ? `${message.sender.is_self ? 'You' : message.sender.name}: ${message.body}`
+        ? `${message.sender.is_self ? 'You' : message.sender.name}: ${message.body || (message.attachments?.length === 1 ? 'Photo' : 'Photos')}`
         : 'Say hello to start your conversation';
 }
 async function loadInbox(more = false) {
@@ -382,17 +392,20 @@ function openConversation(id: number) {
 }
 function resizeViewport() {
     viewportHeight.value = window.visualViewport?.height ?? null;
+    viewportOffset.value = window.visualViewport?.offsetTop ?? 0;
 }
 onMounted(() => {
     void loadInbox();
     resizeViewport();
     window.visualViewport?.addEventListener('resize', resizeViewport);
+    window.visualViewport?.addEventListener('scroll', resizeViewport);
 });
 onBeforeUnmount(() => {
     stopUpdates();
     alive = false;
     controller.abort();
     window.visualViewport?.removeEventListener('resize', resizeViewport);
+    window.visualViewport?.removeEventListener('scroll', resizeViewport);
 });
 </script>
 <style scoped>
@@ -403,6 +416,21 @@ onBeforeUnmount(() => {
     min-height: 25rem;
 }
 @media (max-width: 1023px) {
+    .messages-workspace-open.messages-compact {
+        position: fixed;
+        inset-inline: 0;
+        top: var(--messages-offset, 0px);
+        z-index: 45;
+        height: var(--messages-viewport, 100dvh);
+        min-height: 0;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--color-canvas);
+    }
+    .messages-compact :deep(.conversation-panel) {
+        border: 0;
+        border-radius: 0;
+    }
     .messages-workspace-open {
         height: calc(
             var(--messages-viewport, 100dvh) - 11rem -
