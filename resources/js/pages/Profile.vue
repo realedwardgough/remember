@@ -29,6 +29,15 @@
             </PageHeader>
 
             <Link
+                :href="gallery()"
+                class="surface flex min-h-16 items-center gap-3 p-5 lg:hidden"
+            >
+                <AppIcon name="fa-solid fa-images" />
+                <span class="font-semibold">Family photos</span>
+                <AppIcon name="fa-solid fa-arrow-right" class="ml-auto" />
+            </Link>
+
+            <Link
                 v-if="canManageTimeline"
                 :href="TimelineManagementController()"
                 class="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-butter p-5 text-zinc-950 transition"
@@ -321,7 +330,7 @@ import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import { home, logout } from '@/routes';
+import { gallery, home, logout } from '@/routes';
 import { update as updatePassword } from '@/routes/user-password';
 import { update as updateProfile } from '@/routes/user-profile-information';
 import type { PageProps } from '@/types';

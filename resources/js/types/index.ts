@@ -78,6 +78,7 @@ export interface Family {
 }
 
 export interface PageProps extends InertiaPageProps {
+    unreadMessagesCount: number;
     family: Record<string, Family>;
     remember: { emailNotificationsEnabled: boolean };
     timeline: { name: string; description: string | null };

@@ -13,7 +13,13 @@
                 :name="icon"
                 class="w-5 text-center text-lg"
                 aria-hidden="true"
-            />{{ label }}</Link
+            />{{ label }}
+            <span
+                v-if="badge"
+                class="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-white"
+                :aria-label="`${badge} unread messages`"
+                >{{ badge > 99 ? '99+' : badge }}</span
+            ></Link
         >
     </li>
 </template>
@@ -26,5 +32,6 @@ defineProps<{
     label: string;
     link: LinkComponentBaseProps['href'];
     active?: boolean;
+    badge?: number;
 }>();
 </script>

@@ -9,6 +9,7 @@ use App\Http\Controllers\HeartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\MessagesPageController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationInviteController;
@@ -40,6 +41,8 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    $router->get('/messages', [MessagesPageController::class, 'index'])->name('messages.index');
+    $router->get('/messages/{conversation}', [MessagesPageController::class, 'show'])->name('messages.show');
     // JSON endpoints use the web session and CSRF protection; UI follows in Stage 2.
     $router->prefix('api/messages')->name('messaging.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
         $router->get('/contacts', [MessagingController::class, 'contacts'])->name('contacts');

@@ -16,6 +16,7 @@ use App\Http\Resources\Messaging\MessageResource;
 use App\Models\Conversation;
 use App\Models\MessagingParticipant;
 use App\Models\User;
+use App\Queries\GetUnreadMessageCount;
 use App\Services\Messaging\ReadReceiptToken;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +37,7 @@ class MessagingController extends Controller
         ]);
     }
 
-    public function index(MessagingPageRequest $request): JsonResponse
+    public function index(MessagingPageRequest $request, GetUnreadMessageCount $unread): JsonResponse
     {
         $participantId = MessagingParticipant::query()->where('user_id', $request->user()->id)->value('id');
         $conversations = Conversation::query()->forUser($request->user())
@@ -50,6 +51,7 @@ class MessagingController extends Controller
         return response()->json([
             'data' => ConversationResource::collection($conversations->getCollection()),
             'next_cursor' => $conversations->nextCursor()?->encode(),
+            'unread_count' => $unread->handle($request->user()),
         ]);
     }
 

@@ -47,6 +47,13 @@
                     :link="gallery()"
                     :active="isGallery"
                 />
+                <NavigationLink
+                    icon="fa-regular fa-comment"
+                    label="Messages"
+                    :link="messagesIndex()"
+                    :active="isMessages"
+                    :badge="page.props.unreadMessagesCount"
+                />
                 <li>
                     <button
                         class="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm text-stone-600 hover:bg-lilac"
@@ -116,10 +123,11 @@
                 @activate="emit('openPostForm')"
             />
             <MobileNavigationLink
-                icon="fa-solid fa-images"
-                label="Photos"
-                :link="gallery()"
-                :active="isGallery"
+                icon="fa-regular fa-comment"
+                label="Messages"
+                :link="messagesIndex()"
+                :active="isMessages"
+                :badge="page.props.unreadMessagesCount"
             />
             <MobileNavigationLink
                 icon="fa-regular fa-user"
@@ -137,6 +145,7 @@ import { computed } from 'vue';
 import MobileNavigationLink from '@/components/MobileNavigationLink.vue';
 import NavigationLink from '@/components/NavigationLink.vue';
 import { gallery, home } from '@/routes';
+import { index as messagesIndex } from '@/routes/messages';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps, TimelinePostType } from '@/types';
 const emit = defineEmits<{ openPostForm: []; openSearch: [] }>();
@@ -147,6 +156,7 @@ const tags = computed(() => page.props.tags);
 const postTypes = computed(() => page.props.postTypes);
 const currentPath = computed(() => page.url.split('?')[0]);
 const isGallery = computed(() => currentPath.value === '/gallery');
+const isMessages = computed(() => currentPath.value.startsWith('/messages'));
 const isProfile = computed(
     () =>
         currentPath.value.startsWith('/profile') ||
