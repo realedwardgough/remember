@@ -132,6 +132,10 @@
                             >
                                 {{ message.body }}
                             </p>
+                            <SharedPostCard
+                                v-if="message.shared_post"
+                                :share="message.shared_post"
+                            />
                             <MessagePhoto
                                 v-for="attachment in message.attachments"
                                 :key="attachment.id"
@@ -266,6 +270,7 @@ import {
 import MessageComposer from '@/components/messaging/MessageComposer.vue';
 import MessagePhoto from '@/components/messaging/MessagePhoto.vue';
 import PhotoPreview from '@/components/messaging/PhotoPreview.vue';
+import SharedPostCard from '@/components/messaging/SharedPostCard.vue';
 import { messageDraftsKey } from '@/composables/useMessageDrafts';
 import {
     MessagingRequestError,
@@ -389,6 +394,14 @@ function liveChanged(event: LiveChange) {
         messages.value.some((message) => message.id === event.message_id)
     ) {
         void refreshMessage(event.message_id);
+    }
+
+    if (event.message_id === null) {
+        messages.value
+            .filter((message) => message.shared_post !== null)
+            .forEach((message) => {
+                void refreshMessage(message.id);
+            });
     }
 
     requestSync();

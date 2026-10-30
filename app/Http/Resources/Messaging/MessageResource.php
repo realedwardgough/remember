@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Messaging;
 
+use App\Services\Messaging\SharedPostPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,6 +18,7 @@ class MessageResource extends JsonResource
             'sender' => new ParticipantResource($this->sender),
             'body' => $this->body,
             'attachments' => MessageAttachmentResource::collection($this->whenLoaded('attachments')),
+            'shared_post' => app(SharedPostPresenter::class)->forMessage($this->resource, $request->user()),
             'client_request_id' => $this->sender->user_id === $request->user()->id ? $this->client_request_id : null,
             'created_at' => $this->created_at->toISOString(),
         ];

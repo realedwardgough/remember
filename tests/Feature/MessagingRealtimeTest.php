@@ -165,6 +165,26 @@ class MessagingRealtimeTest extends TestCase
     }
 
     #[Test]
+    public function shared_post_changes_invalidate_existing_messages_only_after_commit(): void
+    {
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+        $post = \App\Models\Post::factory()->memory()->create();
+        $message = app(\App\Actions\Messaging\SharePostMessage::class)->handle($sender, $recipient->id, $post->id, '', (string) Str::uuid());
+        Event::fake([MessagingChanged::class]);
+        DB::beginTransaction();
+        $post->update(['title' => 'Updated shared post']);
+        Event::assertNotDispatched(MessagingChanged::class);
+        DB::commit();
+        Event::assertDispatched(MessagingChanged::class, fn (MessagingChanged $event): bool => $event->conversationId === $message->conversation_id && $event->messageId === $message->id);
+        Event::assertDispatchedTimes(MessagingChanged::class, 1);
+        $post->delete();
+        Event::assertDispatchedTimes(MessagingChanged::class, 2);
+        $post->restore();
+        Event::assertDispatchedTimes(MessagingChanged::class, 3);
+    }
+
+    #[Test]
     public function session_probe_requires_authentication_and_returns_only_identity_and_unread_count(): void
     {
         $this->getJson(route('messaging.session'))->assertUnauthorized();

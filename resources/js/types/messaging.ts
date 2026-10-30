@@ -1,3 +1,14 @@
+export type SharedTimelinePost =
+    | {
+          status: 'available';
+          id: number;
+          title: string;
+          type: string;
+          date: string;
+          url: string;
+      }
+    | { status: 'unavailable'; label: string };
+
 export type MessageAttachment = {
     id: number;
     width: number;
@@ -29,6 +40,7 @@ export type DirectMessage = {
     sender: MessagingParticipant;
     body: string;
     attachments: MessageAttachment[];
+    shared_post: SharedTimelinePost | null;
     client_request_id: string | null;
     created_at: string;
 };

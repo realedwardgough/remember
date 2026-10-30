@@ -11,6 +11,9 @@ class ConversationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        if ($this->resource->relationLoaded('latestMessage') && $this->latestMessage !== null) {
+            $this->latestMessage->setRelation('conversation', $this->resource);
+        }
         return [
             'id' => $this->id,
             'participants' => ParticipantResource::collection(collect([$this->firstParticipant, $this->secondParticipant])),

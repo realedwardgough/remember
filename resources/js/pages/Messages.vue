@@ -319,10 +319,24 @@ function recipient(conversation: DirectConversation) {
 function preview(conversation: DirectConversation) {
     const message = conversation.latest_message;
 
-    return message
-        ? `${message.sender.is_self ? 'You' : message.sender.name}: ${message.body || (message.attachments?.length === 1 ? 'Photo' : 'Photos')}`
-        : 'Say hello to start your conversation';
+    if (!message) {
+        return 'Say hello to start your conversation';
+    }
+
+    const shared = message.shared_post;
+    const content =
+        message.body ||
+        (shared
+            ? shared.status === 'available'
+                ? `Shared a post: ${shared.title}`
+                : 'Post unavailable'
+            : message.attachments?.length === 1
+              ? 'Photo'
+              : 'Photos');
+
+    return `${message.sender.is_self ? 'You' : message.sender.name}: ${content}`;
 }
+
 async function loadInbox(more = false) {
     if (inboxLoading.value) {
         if (!more) {

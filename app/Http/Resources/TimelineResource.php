@@ -37,6 +37,7 @@ class TimelineResource extends JsonResource
             'heartsCount' => $this->resource->hearts_count,
             'heartedByViewer' => (bool) $this->resource->hearted_by_viewer,
             'canEdit' => $request->user()->id === $this->resource->author_id,
+            'canShare' => $this->resource->allowsInteractions(),
             'badgeClass' => $this->resource->post_type->badgeClass(),
             'typeClass' => $this->resource->post_type->typeClass(),
         ];

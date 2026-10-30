@@ -64,6 +64,7 @@ export type TimelinePost = {
     heartsCount: number;
     heartedByViewer: boolean;
     canEdit: boolean;
+    canShare: boolean;
     badgeClass: string;
     typeClass: string;
 };

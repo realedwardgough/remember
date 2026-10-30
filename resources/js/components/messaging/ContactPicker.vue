@@ -80,7 +80,11 @@ import type {
     DirectConversation,
     MessagingContact,
 } from '@/types/messaging';
-const emit = defineEmits<{ open: [id: number] }>();
+const props = defineProps<{ selectOnly?: boolean }>();
+const emit = defineEmits<{
+    open: [id: number];
+    select: [contact: MessagingContact];
+}>();
 const contacts = ref<MessagingContact[]>([]);
 const cursor = ref<string | null>(null);
 const loading = ref(false);
@@ -129,6 +133,12 @@ async function load() {
     }
 }
 async function start(contact: MessagingContact) {
+    if (props.selectOnly) {
+        emit('select', contact);
+
+        return;
+    }
+
     if (starting.value) {
         return;
     }
