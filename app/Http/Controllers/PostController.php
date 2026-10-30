@@ -11,6 +11,9 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Media;
 use App\Models\Post;
+use App\Http\Resources\TimelineResource;
+use App\Queries\GetTimelinePost;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -19,6 +22,13 @@ use Throwable;
 
 class PostController extends Controller
 {
+    public function show(Request $request, Post $post, GetTimelinePost $getPost): Response
+    {
+        Gate::authorize('view', $post);
+
+        return Inertia::render('posts/Show', ['post' => TimelineResource::make($getPost->handle($request->user(), $post->id))->toArray($request)]);
+    }
+
     public function __construct(
         private readonly CreatePost $createPost,
         private readonly UpdatePost $updatePost,

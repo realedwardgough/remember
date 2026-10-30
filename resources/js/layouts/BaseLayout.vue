@@ -35,12 +35,28 @@
 </template>
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 import ToastNotifications from '@/components/ToastNotifications.vue';
+import { connectMessaging } from '@/lib/messaging-live';
+import { reconcilePushDevice } from '@/lib/notifications';
 import { home } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps } from '@/types';
 const page = usePage<PageProps>();
+let disconnectMessaging: (() => void) | undefined;
+onMounted(() => {
+    if (page.props.auth.user) {
+        void reconcilePushDevice().catch(() => {});
+        disconnectMessaging = connectMessaging(
+            page.props.auth.user.id,
+            page.props.messagingRealtime,
+            (count) => {
+                page.props.unreadMessagesCount = count;
+            },
+        );
+    }
+});
+onBeforeUnmount(() => disconnectMessaging?.());
 const userInitials = computed(() =>
     (page.props.auth.user?.name ?? '')
         .split(' ')

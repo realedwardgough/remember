@@ -10,6 +10,8 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\Timeline;
 use App\Models\User;
+use App\Queries\GetUnreadMessageCount;
+use App\Services\Messaging\MessageImageSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -35,6 +37,12 @@ class HandleInertiaRequests extends Middleware
             'remember' => [
                 'emailNotificationsEnabled' => (bool) config('remember.email_notifications'),
             ],
+            'unreadMessagesCount' => fn (): int => $request->user()
+                ? app(GetUnreadMessageCount::class)->handle($request->user()) : 0,
+            'messagingRealtime' => fn (): array => $request->user()
+                ? config('remember.realtime') : ['enabled' => false],
+            'messageImages' => fn (): array => $request->user()
+                ? app(MessageImageSettings::class)->publicSettings() : ['enabled' => false],
             'flash' => [
                 'inviteUrl' => fn (): ?string => session('inviteUrl'),
             ],

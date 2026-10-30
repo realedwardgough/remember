@@ -15,8 +15,10 @@
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.7",
+        "laravel/reverb": "^1.12",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "minishlink/web-push": "^11.0",
         "spatie/laravel-google-cloud-storage": "^2.4",
         "spatie/laravel-permission": "^7.0"
     },
@@ -70,6 +72,7 @@
             "npm run lint:check",
             "npm run format:check",
             "npm run types:check",
+            "npm run test:notifications",
             "@test"
         ],
         "test": [

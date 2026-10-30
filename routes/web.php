@@ -8,7 +8,12 @@ use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\HeartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\MessageAttachmentController;
+use App\Http\Controllers\MessagesPageController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\SharePostMessageController;
+use App\Http\Controllers\SharedPostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationInviteController;
 use App\Http\Controllers\SetupController;
@@ -39,6 +44,35 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    $router->prefix('api/notifications')->name('notifications.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
+        $controller = \App\Http\Controllers\NotificationSettingsController::class;
+        $router->get('/', [$controller, 'show'])->name('show');
+        $router->put('/preferences', [$controller, 'update'])->middleware('throttle:20,1,notifications.update')->name('update');
+        $router->post('/subscription', [$controller, 'subscribe'])->middleware('throttle:10,1,notifications.subscribe')->name('subscribe');
+        $router->delete('/subscription', [$controller, 'unsubscribe'])->middleware('throttle:20,1,notifications.unsubscribe')->name('unsubscribe');
+        $router->post('/test', [$controller, 'test'])->middleware('throttle:3,1,notifications.test')->name('test');
+    });
+
+    $router->get('/messages', [MessagesPageController::class, 'index'])->name('messages.index');
+    $router->get('/messages/{conversation}', [MessagesPageController::class, 'show'])->name('messages.show');
+    $router->get('/messages/{conversation}/shared-posts/{message}', SharedPostController::class)->name('messages.shared-post');
+    // JSON endpoints use the web session and CSRF protection; UI follows in Stage 2.
+    $router->prefix('api/messages')->name('messaging.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
+        $router->get('/contacts', [MessagingController::class, 'contacts'])->name('contacts');
+        $router->get('/conversations', [MessagingController::class, 'index'])->name('index');
+        $router->post('/conversations', [MessagingController::class, 'store'])->middleware('throttle:20,1,messaging.store')->name('store');
+        $router->get('/conversations/{conversation}', [MessagingController::class, 'show'])->name('show');
+        $router->post('/conversations/{conversation}/messages', [MessagingController::class, 'send'])->middleware('throttle:60,1,messaging.send')->name('send');
+        $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1,messaging.read')->name('read');
+        $router->get('/conversations/{conversation}/typing', [MessagingController::class, 'typingStatus'])->middleware('throttle:90,1,messaging.typing-status')->name('typing-status');
+        $router->post('/conversations/{conversation}/typing', [MessagingController::class, 'typing'])->middleware('throttle:90,1,messaging.typing')->name('typing');
+        $router->get('/session', [MessagingController::class, 'session'])->name('session');
+        $router->post('/conversations/{conversation}/attachments', [MessageAttachmentController::class, 'store'])->middleware('throttle:12,1,messaging.attachments.store')->name('attachments.store');
+        $router->get('/attachments/{attachment}', [MessageAttachmentController::class, 'show'])->name('attachments.show');
+        $router->get('/conversations/{conversation}/messages/{message}', [MessagingController::class, 'message'])->name('message');
+        $router->post('/posts/{postId}/share', SharePostMessageController::class)->whereNumber('postId')->middleware('throttle:20,1,messaging.share-post')->name('share-post');
+    });
+
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');
     $router->get(uri: '/gallery', action: [GalleryController::class, 'index'])->name(name: 'gallery');
     $router->get(uri: '/profile', action: [ProfileController::class, 'edit'])->name(name: 'profile.edit');
@@ -50,6 +84,7 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->put(uri: '/timeline/users/{user}/role', action: [TimelineUserRoleController::class, 'update'])->name(name: 'timeline.users.role.update');
     $router->delete(uri: '/timeline/users/{user}', action: [TimelineUserController::class, 'destroy'])->name(name: 'timeline.users.destroy');
     $router->post(uri: '/posts', action: [PostController::class, 'store'])->name(name: 'posts.store');
+    $router->get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
     $router->get(uri: '/posts/{post}/edit', action: [PostController::class, 'edit'])->name(name: 'posts.edit');
     $router->patch(uri: '/posts/{post}', action: [PostController::class, 'update'])->name(name: 'posts.update');
     $router->delete(uri: '/posts/{post}', action: [PostController::class, 'destroy'])->name(name: 'posts.destroy');

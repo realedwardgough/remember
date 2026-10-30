@@ -26,13 +26,18 @@
                         }}
                     </p>
                 </div>
-                <button
-                    type="button"
-                    class="button-primary hidden shrink-0 sm:flex"
-                    @click="activeModal = 'post'"
-                >
-                    + Add a memory
-                </button>
+                <div class="flex shrink-0 flex-col gap-2 sm:flex-row">
+                    <Link :href="gallery()" class="button-secondary lg:hidden">
+                        <AppIcon name="fa-solid fa-images" /> Photos
+                    </Link>
+                    <button
+                        type="button"
+                        class="button-primary hidden shrink-0 sm:flex"
+                        @click="activeModal = 'post'"
+                    >
+                        + Add a memory
+                    </button>
+                </div>
             </header>
             <nav
                 aria-label="Filter by post type"
@@ -183,7 +188,7 @@ import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import { home } from '@/routes';
+import { gallery, home } from '@/routes';
 import type {
     PageProps,
     PaginatedTimelinePosts,

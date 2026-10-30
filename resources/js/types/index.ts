@@ -1,5 +1,6 @@
 export * from './auth';
 import type { PageProps as InertiaPageProps } from '@inertiajs/core';
+import type { RealtimeSettings } from '@/lib/messaging-live';
 
 export type GalleryImage = {
     id: number;
@@ -63,6 +64,7 @@ export type TimelinePost = {
     heartsCount: number;
     heartedByViewer: boolean;
     canEdit: boolean;
+    canShare: boolean;
     badgeClass: string;
     typeClass: string;
 };
@@ -78,6 +80,14 @@ export interface Family {
 }
 
 export interface PageProps extends InertiaPageProps {
+    unreadMessagesCount: number;
+    messagingRealtime: RealtimeSettings;
+    messageImages: {
+        enabled: boolean;
+        retention_hours?: number | null;
+        max_attachments?: number;
+        max_upload_bytes?: number;
+    };
     family: Record<string, Family>;
     remember: { emailNotificationsEnabled: boolean };
     timeline: { name: string; description: string | null };
