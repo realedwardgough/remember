@@ -235,6 +235,7 @@
             </button>
         </div>
         <p
+            v-if="typingText || connectionText"
             class="min-h-6 shrink-0 px-4 py-1 text-xs text-stone-500"
             role="status"
         >
@@ -340,13 +341,16 @@ const typingText = computed(() =>
 const connectionText = computed(
     () =>
         ({
-            live: 'Messages update automatically',
-            connecting: 'Connecting…',
-            polling: 'Checking for new messages…',
+            live: '',
+            connecting: '',
+            polling: '',
             offline: 'You’re offline. We’ll reconnect when you’re back.',
             expired: 'Your session has expired. Reload to sign in again.',
         })[messagingConnection.value],
 );
+let conversationLive = false;
+let checkingTyping = false;
+let typingPoll: ReturnType<typeof setInterval> | undefined;
 const sourceId = crypto.randomUUID();
 let lastTypingAt = 0;
 let sentTyping = false;
@@ -429,18 +433,58 @@ function receiveTyping(event: TypingChange) {
     const key = `${event.participant_id}.${event.source_id}`;
 
     if (event.typing) {
-        typingPeers[key] = Date.now() + 6000;
+        typingPeers[key] =
+            Date.now() +
+            Math.min(6000, Math.max(0, event.expires_in_ms ?? 6000));
     } else {
         delete typingPeers[key];
     }
 
     typingClock.value = Date.now();
 }
+async function refreshTyping() {
+    if (
+        !alive ||
+        checkingTyping ||
+        conversationLive ||
+        props.obscured ||
+        document.visibilityState !== 'visible' ||
+        !conversation.value?.can_send ||
+        ['expired', 'offline'].includes(messagingConnection.value)
+    ) {
+        return;
+    }
+
+    checkingTyping = true;
+
+    try {
+        const status = await messagingRequest<{ data: TypingChange[] }>(
+            `/api/messages/conversations/${props.conversationId}/typing`,
+            { signal: controller.signal },
+        );
+
+        if (
+            !alive ||
+            conversationLive ||
+            props.obscured ||
+            document.visibilityState !== 'visible'
+        ) {
+            return;
+        }
+
+        clearTyping();
+        status.data.forEach(receiveTyping);
+    } catch {
+        /* Typing is best effort; message delivery remains independent. */
+    } finally {
+        checkingTyping = false;
+    }
+}
 function sendTyping(active: boolean) {
     if (
-        messagingConnection.value !== 'live' ||
+        ['expired', 'offline'].includes(messagingConnection.value) ||
         !conversation.value?.can_send ||
-        (active && props.obscured)
+        (active && (props.obscured || document.visibilityState !== 'visible'))
     ) {
         return;
     }
@@ -825,6 +869,7 @@ function dismissRetry(pending: PendingMessage) {
 function onVisibility() {
     if (document.visibilityState === 'visible') {
         void acknowledgeVisible();
+        void refreshTyping();
     } else {
         stopTyping();
         clearTyping();
@@ -859,12 +904,19 @@ onMounted(() => {
     stopLive = listenToConversation(props.conversationId, {
         changed: liveChanged,
         typing: receiveTyping,
-        ready: requestSync,
+        ready: () => {
+            conversationLive = true;
+            requestSync();
+        },
         disconnected: () => {
+            conversationLive = false;
             clearTyping();
             sentTyping = false;
         },
     });
+    typingPoll = setInterval(() => {
+        void refreshTyping();
+    }, 2000);
     typingTimer = setInterval(() => {
         typingClock.value = Date.now();
     }, 1000);
@@ -876,6 +928,7 @@ onBeforeUnmount(() => {
     stopTyping();
     stopLive?.();
     clearInterval(typingTimer);
+    clearInterval(typingPoll);
     clearTimeout(typingTimeout);
     clearTimeout(syncTimer);
     alive = false;

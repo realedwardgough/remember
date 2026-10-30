@@ -4,6 +4,7 @@ export type NotificationSettings = {
     available: boolean;
     public_key: string | null;
     message_alerts: boolean;
+    post_alerts: boolean;
     device_enabled: boolean;
 };
 
@@ -71,5 +72,8 @@ export async function reconcilePushDevice(): Promise<void> {
 
     if (!settings.device_enabled) {
         await clearBrowserPush();
+    } else {
+        const registration = await navigator.serviceWorker.getRegistration('/');
+        await registration?.update();
     }
 }

@@ -8,6 +8,9 @@ use App\Models\ConversationMembership;
 use App\Models\Message;
 use App\Models\MessagePushDelivery;
 use App\Models\NotificationPreference;
+use App\Models\Post;
+use App\Services\Messaging\PushPreview;
+use Illuminate\Support\Facades\Gate;
 use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\Messaging\MessagePush;
@@ -41,21 +44,31 @@ class SendMessagePush implements ShouldQueue
                 return false;
             }
             $message = $delivery->message_id === null ? null : Message::query()->find($delivery->message_id);
+            $post = $delivery->post_id === null ? null : Post::query()->find($delivery->post_id);
+            $authorized = match ($delivery->kind) {
+                'message' => $this->unreadFor($message, $device),
+                'post' => $this->postVisibleFor($post, $device),
+                'test' => $delivery->message_id === null && $delivery->post_id === null,
+                default => false,
+            };
             if (! $settings->available() || $delivery->expires_at->lessThanOrEqualTo(now()) || $delivery->attempts >= 4
                 || ($device->expires_at !== null && $device->expires_at->lessThanOrEqualTo(now()))
                 || ! User::query()->whereKey($device->user_id)->exists()
-                || ($delivery->message_id !== null && ! $this->unreadFor($message, $device))) {
+                || ! $authorized) {
                 $delivery->update(['state' => 'skipped']);
                 return false;
             }
             $delivery->increment('attempts');
             try {
-                $status = $transport->send($device, [
-                    'title' => 'Remember',
-                    'body' => $message === null ? 'Notifications are working on this device.' : 'You have a new message in Remember.',
-                    'url' => $message === null ? '/profile#notifications' : '/messages/'.$message->conversation_id,
-                    'tag' => $message === null ? 'remember-test' : 'remember-conversation-'.$message->conversation_id,
-                ]);
+                $payload = match ($delivery->kind) {
+                    'message' => app(PushPreview::class)->message($message),
+                    'post' => app(PushPreview::class)->post($post),
+                    default => [
+                        'title' => 'Remember', 'body' => 'Notifications are working on this device.', 'kind' => 'test',
+                        'url' => '/profile#notifications', 'tag' => 'remember-test',
+                    ],
+                };
+                $status = $transport->send($device, $payload);
             } catch (Throwable) {
                 $status = null;
             }
@@ -78,6 +91,14 @@ class SendMessagePush implements ShouldQueue
         if ($retry) {
             app(MessagePush::class)->enqueue($this->deliveryId);
         }
+    }
+
+    private function postVisibleFor(?Post $post, PushSubscription $device): bool
+    {
+        $user = User::query()->find($device->user_id);
+        return $post !== null && $post->author_id !== null && $user !== null && $post->author_id !== $user->id
+            && NotificationPreference::query()->where('user_id', $user->id)->where('post_alerts', true)->exists()
+            && Gate::forUser($user)->allows('view', $post);
     }
 
     private function unreadFor(?Message $message, PushSubscription $device): bool

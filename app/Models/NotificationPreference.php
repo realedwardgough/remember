@@ -7,11 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['user_id', 'message_alerts'])]
+#[Fillable(['user_id', 'message_alerts', 'post_alerts'])]
 class NotificationPreference extends Model
 {
     protected function casts(): array
     {
-        return ['message_alerts' => 'boolean'];
+        return ['message_alerts' => 'boolean', 'post_alerts' => 'boolean'];
     }
 }

@@ -21,6 +21,7 @@ use App\Models\MessagingParticipant;
 use App\Models\User;
 use App\Queries\GetUnreadMessageCount;
 use App\Services\Messaging\ReadReceiptToken;
+use App\Services\Messaging\TypingState;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,12 +40,24 @@ class MessagingController extends Controller
     {
         $participant = $conversation->participantFor($request->user());
         try {
+            app(TypingState::class)->update($conversation->id, $participant->id, $request->validated('source_id'), $request->boolean('typing'));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+        try {
             event(new TypingChanged($conversation->id, $participant->id, $request->boolean('typing'), $request->validated('source_id')));
         } catch (Throwable $exception) {
             report($exception);
         }
 
         return response()->noContent();
+    }
+
+    public function typingStatus(Request $request, Conversation $conversation, TypingState $typing): JsonResponse
+    {
+        Gate::authorize('view', $conversation);
+        return response()->json(['data' => Gate::allows('send', $conversation)
+            ? $typing->forOtherParticipant($conversation, $conversation->participantFor($request->user())->id) : []]);
     }
 
     public function contacts(MessagingPageRequest $request): JsonResponse

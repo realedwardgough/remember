@@ -277,9 +277,9 @@ const page = usePage<PageProps>();
 const connectionDescription = computed(
     () =>
         ({
-            live: 'Messages update automatically, wherever you are.',
-            connecting: 'Connecting your conversations…',
-            polling: 'Checking for new messages every few seconds.',
+            live: '',
+            connecting: '',
+            polling: '',
             offline: 'You’re offline. We’ll reconnect when you’re back.',
             expired: 'Your session has expired. Reload to sign in again.',
         })[messagingConnection.value],

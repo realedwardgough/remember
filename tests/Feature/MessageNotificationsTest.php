@@ -175,18 +175,19 @@ class MessageNotificationsTest extends TestCase
     }
 
     #[Test]
-    public function only_recipient_devices_receive_generic_payloads_and_success_is_deduplicated(): void
+    public function only_recipient_devices_receive_message_previews_and_success_is_deduplicated(): void
     {
         [$sender, $recipient, $device, $message, $delivery] = $this->pending();
         $this->subscribe($sender, str_repeat('c', 64), 'sender');
         $this->assertDatabaseCount('message_push_deliveries', 1);
         $this->travel(6)->seconds();
         $transport = Mockery::mock(PushTransport::class);
-        $transport->shouldReceive('send')->once()->withArgs(function ($subscription, $payload) use ($device, $message): bool {
+        $transport->shouldReceive('send')->once()->withArgs(function ($subscription, $payload) use ($device, $message, $sender): bool {
             $this->assertSame($device->id, $subscription->id);
-            $this->assertSame('You have a new message in Remember.', $payload['body']);
+            $this->assertSame('Secret message 🥰', $payload['body']);
+            $this->assertSame($sender->name.' · Remember', $payload['title']);
             $this->assertSame('/messages/'.$message->conversation_id, $payload['url']);
-            $this->assertStringNotContainsString('Secret', json_encode($payload));
+            $this->assertArrayNotHasKey('endpoint', $payload);
             return true;
         })->andReturn(201);
         $job = new SendMessagePush($delivery->id);

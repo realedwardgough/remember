@@ -8,9 +8,10 @@
             Notifications
         </h2>
         <p class="mt-2 text-sm text-stone-600">
-            Get a private heads-up when someone messages you. Alerts say “You
-            have a new message in Remember.” Names, message text and photos stay
-            inside the app.
+            Choose alerts for messages and new timeline posts. Message alerts
+            show who sent them and a message preview. New-post alerts show the
+            author and title. These previews can appear on your Lock Screen;
+            photos stay inside the app.
         </p>
         <p v-if="loading" class="mt-4" role="status">
             Checking notification settings…
@@ -25,6 +26,7 @@
                         :disabled="busy"
                         @change="
                             setPreference(
+                                'message_alerts',
                                 ($event.target as HTMLInputElement).checked,
                             )
                         "
@@ -38,6 +40,31 @@
                             : 'Off — new-message alerts are paused on all your devices.'
                     }}
                     Enabling a device is a separate step below.
+                </p>
+            </div>
+            <div class="mt-5 border-b pb-5">
+                <label class="flex min-h-12 items-center gap-3 font-semibold">
+                    <input
+                        type="checkbox"
+                        class="size-5 accent-primary"
+                        :checked="settings.post_alerts"
+                        :disabled="busy"
+                        @change="
+                            setPreference(
+                                'post_alerts',
+                                ($event.target as HTMLInputElement).checked,
+                            )
+                        "
+                    />
+                    New-post alerts for my account
+                </label>
+                <p class="mt-1 text-sm text-stone-600">
+                    {{
+                        settings.post_alerts
+                            ? 'On — get alerts when someone else adds a post you can see.'
+                            : 'Off — new-post alerts are paused on all your devices.'
+                    }}
+                    Edits and your own posts do not send alerts.
                 </p>
             </div>
             <div class="mt-5 grid gap-3">
@@ -88,12 +115,15 @@
                     and recheck.
                 </p>
                 <p
-                    v-if="deviceEnabled && !settings.message_alerts"
+                    v-if="
+                        deviceEnabled &&
+                        !settings.message_alerts &&
+                        !settings.post_alerts
+                    "
                     class="text-sm text-stone-600"
                 >
-                    This device is ready. Turn on message alerts above to
-                    receive new-message notifications. You can still send a
-                    test.
+                    This device is ready. Turn on message or new-post alerts
+                    above to receive notifications. You can still send a test.
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <button
@@ -324,7 +354,10 @@ async function refresh() {
         loading.value = false;
     }
 }
-async function setPreference(enabled: boolean) {
+async function setPreference(
+    preference: 'message_alerts' | 'post_alerts',
+    enabled: boolean,
+) {
     busy.value = true;
     error.value = '';
     feedback.value = '';
@@ -332,11 +365,15 @@ async function setPreference(enabled: boolean) {
     try {
         settings.value = await messagingRequest<NotificationSettings>(
             '/api/notifications/preferences',
-            { method: 'PUT', body: { message_alerts: enabled } },
+            { method: 'PUT', body: { [preference]: enabled } },
         );
+        const label =
+            preference === 'message_alerts'
+                ? 'Message alerts'
+                : 'New-post alerts';
         feedback.value = enabled
-            ? 'Message alerts turned on for your account.'
-            : 'Message alerts paused on all your devices.';
+            ? `${label} turned on for your account.`
+            : `${label} paused on all your devices.`;
     } catch (cause) {
         error.value = messageError(cause);
     } finally {
@@ -378,9 +415,10 @@ async function enable() {
             { method: 'POST', body: subscription.toJSON() },
         );
         subscribed.value = true;
-        feedback.value = settings.value.message_alerts
-            ? 'This device is ready for message alerts. Send a test to check your phone settings.'
-            : 'This device is ready. Turn on message alerts above, or send a test now.';
+        feedback.value =
+            settings.value.message_alerts || settings.value.post_alerts
+                ? 'This device is ready for your selected alerts. Send a test to check your phone settings.'
+                : 'This device is ready. Turn on message or new-post alerts above, or send a test now.';
     } catch (cause) {
         error.value =
             cause instanceof DOMException

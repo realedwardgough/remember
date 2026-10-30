@@ -19,6 +19,7 @@ export type TypingChange = {
     participant_id: number;
     source_id: string;
     typing: boolean;
+    expires_in_ms?: number;
 };
 type ConversationListener = {
     changed: (event: LiveChange) => void;
@@ -123,6 +124,11 @@ function joinConversation(id: number) {
         )
         .subscribed(() =>
             conversations.get(id)?.forEach((listener) => listener.ready()),
+        )
+        .error(() =>
+            conversations
+                .get(id)
+                ?.forEach((listener) => listener.disconnected()),
         );
 }
 export function listenToConversation(

@@ -47,10 +47,10 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->prefix('api/notifications')->name('notifications.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
         $controller = \App\Http\Controllers\NotificationSettingsController::class;
         $router->get('/', [$controller, 'show'])->name('show');
-        $router->put('/preferences', [$controller, 'update'])->middleware('throttle:20,1')->name('update');
-        $router->post('/subscription', [$controller, 'subscribe'])->middleware('throttle:10,1')->name('subscribe');
-        $router->delete('/subscription', [$controller, 'unsubscribe'])->middleware('throttle:20,1')->name('unsubscribe');
-        $router->post('/test', [$controller, 'test'])->middleware('throttle:3,1')->name('test');
+        $router->put('/preferences', [$controller, 'update'])->middleware('throttle:20,1,notifications.update')->name('update');
+        $router->post('/subscription', [$controller, 'subscribe'])->middleware('throttle:10,1,notifications.subscribe')->name('subscribe');
+        $router->delete('/subscription', [$controller, 'unsubscribe'])->middleware('throttle:20,1,notifications.unsubscribe')->name('unsubscribe');
+        $router->post('/test', [$controller, 'test'])->middleware('throttle:3,1,notifications.test')->name('test');
     });
 
     $router->get('/messages', [MessagesPageController::class, 'index'])->name('messages.index');
@@ -60,16 +60,17 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->prefix('api/messages')->name('messaging.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
         $router->get('/contacts', [MessagingController::class, 'contacts'])->name('contacts');
         $router->get('/conversations', [MessagingController::class, 'index'])->name('index');
-        $router->post('/conversations', [MessagingController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        $router->post('/conversations', [MessagingController::class, 'store'])->middleware('throttle:20,1,messaging.store')->name('store');
         $router->get('/conversations/{conversation}', [MessagingController::class, 'show'])->name('show');
-        $router->post('/conversations/{conversation}/messages', [MessagingController::class, 'send'])->middleware('throttle:60,1')->name('send');
-        $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1')->name('read');
-        $router->post('/conversations/{conversation}/typing', [MessagingController::class, 'typing'])->middleware('throttle:90,1')->name('typing');
+        $router->post('/conversations/{conversation}/messages', [MessagingController::class, 'send'])->middleware('throttle:60,1,messaging.send')->name('send');
+        $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1,messaging.read')->name('read');
+        $router->get('/conversations/{conversation}/typing', [MessagingController::class, 'typingStatus'])->middleware('throttle:90,1,messaging.typing-status')->name('typing-status');
+        $router->post('/conversations/{conversation}/typing', [MessagingController::class, 'typing'])->middleware('throttle:90,1,messaging.typing')->name('typing');
         $router->get('/session', [MessagingController::class, 'session'])->name('session');
-        $router->post('/conversations/{conversation}/attachments', [MessageAttachmentController::class, 'store'])->middleware('throttle:12,1')->name('attachments.store');
+        $router->post('/conversations/{conversation}/attachments', [MessageAttachmentController::class, 'store'])->middleware('throttle:12,1,messaging.attachments.store')->name('attachments.store');
         $router->get('/attachments/{attachment}', [MessageAttachmentController::class, 'show'])->name('attachments.show');
         $router->get('/conversations/{conversation}/messages/{message}', [MessagingController::class, 'message'])->name('message');
-        $router->post('/posts/{postId}/share', SharePostMessageController::class)->whereNumber('postId')->middleware('throttle:20,1')->name('share-post');
+        $router->post('/posts/{postId}/share', SharePostMessageController::class)->whereNumber('postId')->middleware('throttle:20,1,messaging.share-post')->name('share-post');
     });
 
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');

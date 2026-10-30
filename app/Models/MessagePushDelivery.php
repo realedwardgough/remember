@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['message_id', 'push_subscription_id', 'state', 'attempts', 'next_attempt_at', 'expires_at'])]
+#[Fillable(['message_id', 'post_id', 'kind', 'push_subscription_id', 'state', 'attempts', 'next_attempt_at', 'expires_at'])]
 class MessagePushDelivery extends Model
 {
     protected function casts(): array

@@ -23,13 +23,17 @@ class NotificationSettingsController extends Controller
         return response()->json([
             ...$settings->publicSettings(),
             'message_alerts' => NotificationPreference::query()->where('user_id', $request->user()->id)->value('message_alerts') === true,
+            'post_alerts' => NotificationPreference::query()->where('user_id', $request->user()->id)->value('post_alerts') === true,
             'device_enabled' => $device !== null && ($device->expires_at === null || $device->expires_at->isFuture()),
         ]);
     }
 
     public function update(Request $request): JsonResponse
     {
-        $data = $request->validate(['message_alerts' => ['required', 'boolean']]);
+        $data = $request->validate([
+            'message_alerts' => ['required_without:post_alerts', 'boolean'],
+            'post_alerts' => ['required_without:message_alerts', 'boolean'],
+        ]);
         NotificationPreference::query()->updateOrCreate(['user_id' => $request->user()->id], $data);
         return $this->show($request, app(PushSettings::class));
     }
@@ -93,7 +97,7 @@ class NotificationSettingsController extends Controller
         abort_unless($device !== null && ($device->expires_at === null || $device->expires_at->isFuture()), 422);
         // Explicit test works even when account-wide message alerts are paused.
         $delivery = MessagePushDelivery::query()->create([
-            'push_subscription_id' => $device->id,
+            'push_subscription_id' => $device->id, 'kind' => 'test',
             'next_attempt_at' => now(), 'expires_at' => now()->addMinutes(5),
         ]);
         app(\App\Services\Messaging\MessagePush::class)->enqueue($delivery->id);

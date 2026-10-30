@@ -105,7 +105,7 @@ class MessagingIntegrationTest extends TestCase
         $this->drainQueue();
         $this->assertSame('sent', MessagePushDelivery::query()->sole()->state);
         $this->assertSame([['user_id' => $this->recipient->id, 'payload' => [
-            'title' => 'Remember', 'body' => 'You have a new message in Remember.',
+            'title' => 'Original Sender · Remember', 'body' => $body, 'kind' => 'message',
             'url' => '/messages/'.$this->conversation->id, 'tag' => 'remember-conversation-'.$this->conversation->id,
         ]]], $this->delivered);
 
