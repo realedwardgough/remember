@@ -54,7 +54,7 @@
         <div
             ref="scroller"
             class="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-canvas/40 p-4 sm:p-5"
-            @scroll="acknowledgeVisible"
+            @scroll="onScroll"
         >
             <p
                 v-if="loading"
@@ -194,11 +194,29 @@
         >
             This account has been deleted. You can still read your conversation.
         </p>
+        <div v-if="hasNewMessages" class="border-t bg-lilac p-2 text-center">
+            <button
+                type="button"
+                class="min-h-11 text-sm font-semibold text-primary"
+                @click="bottom"
+            >
+                New messages ↓
+            </button>
+        </div>
+        <p
+            class="min-h-6 shrink-0 px-4 py-1 text-xs text-stone-500"
+            role="status"
+        >
+            {{ typingText || connectionText }}
+        </p>
         <MessageComposer
-            v-else
+            v-if="!conversation || conversation.can_send"
             v-model="draft.body"
-            :disabled="!conversation || loading"
+            :disabled="
+                !conversation || loading || messagingConnection === 'expired'
+            "
             @send="sendDraft"
+            @blur="stopTyping"
         />
     </section>
 </template>
@@ -218,9 +236,15 @@ import {
 import MessageComposer from '@/components/messaging/MessageComposer.vue';
 import { messageDraftsKey } from '@/composables/useMessageDrafts';
 import { messageError, messageTime, messagingRequest } from '@/lib/messaging';
+import {
+    listenToConversation,
+    messagingConnection,
+} from '@/lib/messaging-live';
+import type { TypingChange } from '@/lib/messaging-live';
 import { index as messagesIndex } from '@/routes/messages';
 import {
     read as readRoute,
+    typing as typingRoute,
     send as sendRoute,
     show as historyRoute,
 } from '@/routes/messaging';
@@ -256,6 +280,191 @@ const scroller = ref<HTMLDivElement | null>(null);
 let acknowledging = false;
 let alive = true;
 const controller = new AbortController();
+const hasNewMessages = ref(false);
+const typingPeers = reactive<Record<string, number>>({});
+const typingClock = ref(Date.now());
+const typingText = computed(() =>
+    Object.values(typingPeers).some((expiry) => expiry > typingClock.value) &&
+    other.value &&
+    !other.value.deleted
+        ? `${other.value.name} is typing…`
+        : '',
+);
+const connectionText = computed(
+    () =>
+        ({
+            live: 'Messages update automatically',
+            connecting: 'Connecting…',
+            polling: 'Checking for new messages…',
+            offline: 'You’re offline. We’ll reconnect when you’re back.',
+            expired: 'Your session has expired. Reload to sign in again.',
+        })[messagingConnection.value],
+);
+const sourceId = crypto.randomUUID();
+let lastTypingAt = 0;
+let sentTyping = false;
+let typingTimeout: ReturnType<typeof setTimeout> | undefined;
+let typingTimer: ReturnType<typeof setInterval> | undefined;
+let stopLive: (() => void) | undefined;
+let syncing = false;
+let syncQueued = false;
+let syncTimer: ReturnType<typeof setTimeout> | undefined;
+function clearTyping() {
+    Object.keys(typingPeers).forEach((key) => delete typingPeers[key]);
+}
+function receiveTyping(event: TypingChange) {
+    const participant = conversation.value?.participants.find(
+        (person) => person.id === event.participant_id,
+    );
+
+    if (
+        !participant ||
+        participant.is_self ||
+        participant.deleted ||
+        event.conversation_id !== props.conversationId
+    ) {
+        return;
+    }
+
+    const key = `${event.participant_id}.${event.source_id}`;
+
+    if (event.typing) {
+        typingPeers[key] = Date.now() + 6000;
+    } else {
+        delete typingPeers[key];
+    }
+
+    typingClock.value = Date.now();
+}
+function sendTyping(active: boolean) {
+    if (
+        messagingConnection.value !== 'live' ||
+        !conversation.value?.can_send ||
+        (active && props.obscured)
+    ) {
+        return;
+    }
+
+    if (!active && !sentTyping) {
+        return;
+    }
+
+    if (active && sentTyping && Date.now() - lastTypingAt < 2000) {
+        return;
+    }
+
+    sentTyping = active;
+    lastTypingAt = Date.now();
+    void messagingRequest(typingRoute.url(props.conversationId), {
+        method: 'POST',
+        body: { typing: active, source_id: sourceId },
+    }).catch(() => {});
+}
+function stopTyping() {
+    clearTimeout(typingTimeout);
+    sendTyping(false);
+}
+function requestSync() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+        void sync();
+    }, 80);
+}
+function drainSync() {
+    if (syncQueued && alive) {
+        syncQueued = false;
+        requestSync();
+    }
+}
+function updateConversation(value: DirectConversation) {
+    conversation.value = value;
+    messages.value = messages.value.map((message) => ({
+        ...message,
+        sender:
+            value.participants.find(
+                (person) => person.id === message.sender.id,
+            ) ?? message.sender,
+    }));
+
+    if (!value.can_send) {
+        clearTyping();
+    }
+}
+async function sync() {
+    if (
+        !alive ||
+        document.visibilityState !== 'visible' ||
+        messagingConnection.value === 'expired'
+    ) {
+        return;
+    }
+
+    if (loading.value || refreshing.value || loadingOlder.value || syncing) {
+        syncQueued = true;
+
+        return;
+    }
+
+    if (!messages.value.length) {
+        await refresh();
+
+        return;
+    }
+
+    syncing = true;
+    const follow = nearBottom();
+
+    try {
+        let more: number | null;
+
+        do {
+            const after = messages.value.at(-1)!.id;
+            const history = await messagingRequest<MessageHistory>(
+                historyRoute.url(props.conversationId, {
+                    query: { after_id: after },
+                }),
+                { signal: controller.signal },
+            );
+
+            if (!alive) {
+                return;
+            }
+
+            updateConversation(history.conversation);
+            merge(history.data);
+
+            if (history.read_token) {
+                readToken.value = history.read_token;
+            }
+
+            if (history.data.length && !follow) {
+                hasNewMessages.value = true;
+            }
+
+            more = history.next_after_id;
+        } while (more && alive);
+
+        error.value = '';
+
+        if (follow) {
+            await bottom();
+        }
+    } catch (failure) {
+        if (alive) {
+            error.value = messageError(failure);
+        }
+    } finally {
+        syncing = false;
+        drainSync();
+    }
+}
+function onScroll() {
+    if (nearBottom()) {
+        hasNewMessages.value = false;
+    }
+
+    void acknowledgeVisible();
+}
 
 function day(date: string) {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(
@@ -271,6 +480,7 @@ function nearBottom() {
     );
 }
 async function bottom() {
+    hasNewMessages.value = false;
     await nextTick();
 
     if (alive && scroller.value) {
@@ -324,7 +534,7 @@ async function refresh() {
         // Replace sender metadata too, so account deletion cannot leave old names in loaded history.
         messages.value = history.data;
         merge(history.data);
-        conversation.value = history.conversation;
+        updateConversation(history.conversation);
         beforeId.value = history.next_before_id;
         readToken.value = history.read_token;
         loading.value = false;
@@ -337,6 +547,7 @@ async function refresh() {
     } finally {
         loading.value = false;
         refreshing.value = false;
+        drainSync();
     }
 }
 async function loadOlder() {
@@ -362,7 +573,7 @@ async function loadOlder() {
         }
 
         merge(history.data);
-        conversation.value = history.conversation;
+        updateConversation(history.conversation);
         beforeId.value = history.next_before_id;
         await nextTick();
 
@@ -376,6 +587,7 @@ async function loadOlder() {
         }
     } finally {
         loadingOlder.value = false;
+        drainSync();
     }
 }
 async function acknowledgeVisible() {
@@ -415,6 +627,7 @@ async function acknowledgeVisible() {
     }
 }
 async function sendDraft() {
+    stopTyping();
     const body = draft.body.trim();
 
     if (!body || !conversation.value?.can_send) {
@@ -468,6 +681,9 @@ async function deliver(pending: PendingMessage) {
 function onVisibility() {
     if (document.visibilityState === 'visible') {
         void acknowledgeVisible();
+    } else {
+        stopTyping();
+        clearTyping();
     }
 }
 watch(
@@ -475,15 +691,52 @@ watch(
     (obscured) => {
         if (!obscured) {
             void acknowledgeVisible();
+        } else {
+            stopTyping();
         }
     },
 );
+watch(
+    () => draft.body,
+    (body) => {
+        clearTimeout(typingTimeout);
+
+        if (!body.trim()) {
+            stopTyping();
+
+            return;
+        }
+
+        sendTyping(true);
+        typingTimeout = setTimeout(stopTyping, 3000);
+    },
+);
 onMounted(() => {
+    stopLive = listenToConversation(props.conversationId, {
+        changed: () => {
+            clearTyping();
+            requestSync();
+        },
+        typing: receiveTyping,
+        ready: requestSync,
+        disconnected: () => {
+            clearTyping();
+            sentTyping = false;
+        },
+    });
+    typingTimer = setInterval(() => {
+        typingClock.value = Date.now();
+    }, 1000);
     void refresh();
     window.addEventListener('focus', onVisibility);
     document.addEventListener('visibilitychange', onVisibility);
 });
 onBeforeUnmount(() => {
+    stopTyping();
+    stopLive?.();
+    clearInterval(typingTimer);
+    clearTimeout(typingTimeout);
+    clearTimeout(syncTimer);
     alive = false;
     controller.abort();
     window.removeEventListener('focus', onVisibility);

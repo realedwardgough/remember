@@ -14,7 +14,7 @@
             <PageHeader
                 title="Little conversations"
                 eyebrow="Your messages"
-                description="A place to catch up, just between you two."
+                :description="connectionDescription"
                 :class="{ 'hidden lg:flex': conversationId }"
             >
                 <button
@@ -260,6 +260,7 @@ import {
     messageError,
     messagingRequest,
 } from '@/lib/messaging';
+import { messagingConnection, onMessagingUpdate } from '@/lib/messaging-live';
 import { show as showConversation } from '@/routes/messages';
 import { index as inboxRoute } from '@/routes/messaging';
 import type { PageProps } from '@/types';
@@ -267,6 +268,16 @@ import type { CursorPage, DirectConversation } from '@/types/messaging';
 
 defineProps<{ conversationId: number | null }>();
 const page = usePage<PageProps>();
+const connectionDescription = computed(
+    () =>
+        ({
+            live: 'Messages update automatically, wherever you are.',
+            connecting: 'Connecting your conversations…',
+            polling: 'Checking for new messages every few seconds.',
+            offline: 'You’re offline. We’ll reconnect when you’re back.',
+            expired: 'Your session has expired. Reload to sign in again.',
+        })[messagingConnection.value],
+);
 const activeModal = ref<'contact' | 'post' | 'search' | null>(null);
 const inbox = ref<DirectConversation[]>([]);
 const inboxCursor = ref<string | null>(null);
@@ -286,6 +297,9 @@ const sortedInbox = computed(() =>
 );
 let alive = true;
 let inboxRefreshQueued = false;
+const stopUpdates = onMessagingUpdate(() => {
+    void loadInbox();
+});
 const controller = new AbortController();
 function recipient(conversation: DirectConversation) {
     return conversation.participants.find(
@@ -375,6 +389,7 @@ onMounted(() => {
     window.visualViewport?.addEventListener('resize', resizeViewport);
 });
 onBeforeUnmount(() => {
+    stopUpdates();
     alive = false;
     controller.abort();
     window.visualViewport?.removeEventListener('resize', resizeViewport);

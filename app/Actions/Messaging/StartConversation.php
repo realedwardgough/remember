@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMembership;
 use App\Models\MessagingParticipant;
 use App\Models\User;
+use App\Services\Messaging\MessagingUpdates;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -41,6 +42,10 @@ class StartConversation
                     'conversation_id' => $conversation->id,
                     'participant_id' => $participantId,
                 ]);
+            }
+
+            if ($conversation->wasRecentlyCreated) {
+                app(MessagingUpdates::class)->dispatch($conversation->id);
             }
 
             return $conversation;

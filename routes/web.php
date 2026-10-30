@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function (Router $router): void {
         $router->get('/conversations/{conversation}', [MessagingController::class, 'show'])->name('show');
         $router->post('/conversations/{conversation}/messages', [MessagingController::class, 'send'])->middleware('throttle:60,1')->name('send');
         $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1')->name('read');
+        $router->post('/conversations/{conversation}/typing', [MessagingController::class, 'typing'])->middleware('throttle:90,1')->name('typing');
+        $router->get('/session', [MessagingController::class, 'session'])->name('session');
     });
 
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');

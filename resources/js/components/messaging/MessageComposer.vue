@@ -19,6 +19,7 @@
                 :aria-invalid="tooLong || undefined"
                 :aria-describedby="tooLong ? 'message-length-error' : undefined"
                 @input="update"
+                @blur="emit('blur')"
                 @keydown="keydown"
             />
             <button
@@ -48,7 +49,11 @@ import { Send } from 'lucide-vue-next';
 import { computed, nextTick, ref } from 'vue';
 import EmojiPicker from '@/components/messaging/EmojiPicker.vue';
 const props = defineProps<{ modelValue: string; disabled?: boolean }>();
-const emit = defineEmits<{ 'update:modelValue': [value: string]; send: [] }>();
+const emit = defineEmits<{
+    'update:modelValue': [value: string];
+    send: [];
+    blur: [];
+}>();
 const input = ref<HTMLTextAreaElement | null>(null);
 const tooLong = computed(() => [...props.modelValue].length > 10000);
 function update(event: Event) {

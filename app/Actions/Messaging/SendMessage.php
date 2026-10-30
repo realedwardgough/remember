@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessagingParticipant;
 use App\Models\User;
+use App\Services\Messaging\MessagingUpdates;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -57,6 +58,7 @@ class SendMessage
             ]);
 
             $locked->touch();
+            app(MessagingUpdates::class)->dispatch($locked->id, $message->id);
 
             return $message;
         }, attempts: 3);

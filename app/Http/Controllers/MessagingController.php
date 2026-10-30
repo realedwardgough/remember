@@ -11,6 +11,8 @@ use App\Http\Requests\Messaging\ReadConversationRequest;
 use App\Http\Requests\Messaging\MessagingPageRequest;
 use App\Http\Requests\Messaging\SendMessageRequest;
 use App\Http\Requests\Messaging\StartConversationRequest;
+use App\Http\Requests\Messaging\TypingRequest;
+use App\Events\Messaging\TypingChanged;
 use App\Http\Resources\Messaging\ConversationResource;
 use App\Http\Resources\Messaging\MessageResource;
 use App\Models\Conversation;
@@ -23,9 +25,27 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Throwable;
 
 class MessagingController extends Controller
 {
+    public function session(Request $request, GetUnreadMessageCount $unread): JsonResponse
+    {
+        return response()->json(['user_id' => $request->user()->id, 'unread_count' => $unread->handle($request->user())]);
+    }
+
+    public function typing(TypingRequest $request, Conversation $conversation): Response
+    {
+        $participant = $conversation->participantFor($request->user());
+        try {
+            event(new TypingChanged($conversation->id, $participant->id, $request->boolean('typing'), $request->validated('source_id')));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return response()->noContent();
+    }
+
     public function contacts(MessagingPageRequest $request): JsonResponse
     {
         $contacts = User::query()->where('id', '!=', $request->user()->id)

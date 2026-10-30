@@ -1,5 +1,6 @@
 export * from './auth';
 import type { PageProps as InertiaPageProps } from '@inertiajs/core';
+import type { RealtimeSettings } from '@/lib/messaging-live';
 
 export type GalleryImage = {
     id: number;
@@ -79,6 +80,7 @@ export interface Family {
 
 export interface PageProps extends InertiaPageProps {
     unreadMessagesCount: number;
+    messagingRealtime: RealtimeSettings;
     family: Record<string, Family>;
     remember: { emailNotificationsEnabled: boolean };
     timeline: { name: string; description: string | null };

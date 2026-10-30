@@ -38,6 +38,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'unreadMessagesCount' => fn (): int => $request->user()
                 ? app(GetUnreadMessageCount::class)->handle($request->user()) : 0,
+            'messagingRealtime' => fn (): array => $request->user()
+                ? config('remember.realtime') : ['enabled' => false],
             'flash' => [
                 'inviteUrl' => fn (): ?string => session('inviteUrl'),
             ],
