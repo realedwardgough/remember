@@ -25,6 +25,7 @@ class RemoveTimelineUser
             }
 
             $lockedUser->delete();
+            DB::table('sessions')->where('user_id', $lockedUser->id)->delete();
         });
     }
 }

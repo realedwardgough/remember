@@ -8,6 +8,7 @@ use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\HeartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationInviteController;
@@ -39,6 +40,16 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    // JSON endpoints use the web session and CSRF protection; UI follows in Stage 2.
+    $router->prefix('api/messages')->name('messaging.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
+        $router->get('/contacts', [MessagingController::class, 'contacts'])->name('contacts');
+        $router->get('/conversations', [MessagingController::class, 'index'])->name('index');
+        $router->post('/conversations', [MessagingController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        $router->get('/conversations/{conversation}', [MessagingController::class, 'show'])->name('show');
+        $router->post('/conversations/{conversation}/messages', [MessagingController::class, 'send'])->middleware('throttle:60,1')->name('send');
+        $router->put('/conversations/{conversation}/read', [MessagingController::class, 'read'])->middleware('throttle:120,1')->name('read');
+    });
+
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');
     $router->get(uri: '/gallery', action: [GalleryController::class, 'index'])->name(name: 'gallery');
     $router->get(uri: '/profile', action: [ProfileController::class, 'edit'])->name(name: 'profile.edit');
