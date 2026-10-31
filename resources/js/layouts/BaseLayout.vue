@@ -7,7 +7,7 @@
             <slot name="sidebar" />
             <div class="min-w-0">
                 <div
-                    class="mx-auto w-full max-w-5xl px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12 lg:py-10"
+                    class="mx-auto w-full max-w-5xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12 lg:py-10"
                 >
                     <slot />
                 </div>
@@ -15,7 +15,7 @@
         </div>
         <template v-else>
             <header
-                class="flex items-center justify-between border-b bg-white px-5 py-3"
+                class="hidden items-center justify-between border-b bg-white px-5 py-3 lg:flex"
             >
                 <Link :href="home()" class="story-font text-2xl"
                     >Remember <span class="text-primary">♡</span></Link
@@ -28,7 +28,9 @@
                     >{{ userInitials }}</Link
                 >
             </header>
-            <div class="mx-auto w-full max-w-175 px-5 py-8"><slot /></div>
+            <div class="mx-auto w-full max-w-175 px-4 py-3 lg:px-5 lg:py-8">
+                <slot />
+            </div>
         </template>
         <ToastNotifications />
     </main>

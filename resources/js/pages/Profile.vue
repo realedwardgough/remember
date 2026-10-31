@@ -9,7 +9,7 @@
 
         <Head title="Profile" />
 
-        <section class="grid gap-6">
+        <section class="grid gap-3 lg:gap-6">
             <PageHeader
                 :title="user.name"
                 eyebrow="Your account"

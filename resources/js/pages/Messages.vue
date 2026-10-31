@@ -2,6 +2,7 @@
     <BaseLayout>
         <template #sidebar
             ><Sidebar
+                :mobile-navigation-style="mobileNavigationStyle"
                 @open-post-form="activeModal = 'post'"
                 @open-search="activeModal = 'search'"
         /></template>
@@ -10,10 +11,6 @@
             class="messages-workspace flex min-h-0 flex-col gap-5"
             :class="{
                 'messages-workspace-open': conversationId,
-                'messages-compact':
-                    conversationId &&
-                    viewportHeight !== null &&
-                    viewportHeight < 600,
             }"
             :style="workspaceStyle"
         >
@@ -21,7 +18,7 @@
                 title="Little conversations"
                 eyebrow="Your messages"
                 :description="connectionDescription"
-                :class="{ 'hidden lg:flex': conversationId }"
+                class="hidden lg:flex"
             >
                 <button
                     type="button"
@@ -35,29 +32,49 @@
                 class="grid min-h-0 flex-1 gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]"
             >
                 <section
-                    class="surface flex min-h-0 flex-col overflow-hidden"
+                    class="surface flex min-h-0 flex-col overflow-hidden max-lg:rounded-none max-lg:border-0 max-lg:shadow-none"
                     :class="{ 'hidden lg:flex': conversationId }"
                     aria-labelledby="inbox-heading"
                 >
                     <header
-                        class="flex items-center justify-between border-b px-4 py-3"
+                        class="flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2 lg:py-3"
                     >
-                        <h2 id="inbox-heading" class="font-semibold">
-                            Your conversations
-                        </h2>
-                        <button
-                            type="button"
-                            class="flex size-11 items-center justify-center rounded-xl text-stone-500 hover:bg-lilac"
-                            :disabled="inboxLoading"
-                            aria-label="Refresh messages"
-                            @click="loadInbox()"
-                        >
-                            <RefreshCw
-                                :size="18"
-                                :class="{ 'animate-spin': inboxLoading }"
-                            />
-                        </button>
+                        <h1 id="inbox-heading" class="font-semibold">
+                            <span class="lg:hidden">Messages</span>
+                            <span class="hidden lg:inline"
+                                >Your conversations</span
+                            >
+                        </h1>
+                        <div class="flex items-center gap-1">
+                            <button
+                                type="button"
+                                class="button-primary px-3 py-2 lg:hidden"
+                                aria-label="New message"
+                                @click="activeModal = 'contact'"
+                            >
+                                <Plus :size="18" />New
+                            </button>
+                            <button
+                                type="button"
+                                class="flex size-11 items-center justify-center rounded-xl text-stone-500 hover:bg-lilac"
+                                :disabled="inboxLoading"
+                                aria-label="Refresh messages"
+                                @click="loadInbox()"
+                            >
+                                <RefreshCw
+                                    :size="18"
+                                    :class="{ 'animate-spin': inboxLoading }"
+                                />
+                            </button>
+                        </div>
                     </header>
+                    <p
+                        v-if="connectionDescription"
+                        role="status"
+                        class="border-b bg-butter px-4 py-2 text-xs text-stone-600 lg:hidden"
+                    >
+                        {{ connectionDescription }}
+                    </p>
                     <p
                         v-if="inboxError"
                         role="alert"
@@ -72,7 +89,9 @@
                             Try again
                         </button>
                     </p>
-                    <div class="min-h-0 flex-1 overflow-y-auto p-2">
+                    <div
+                        class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:p-2"
+                    >
                         <p
                             v-if="inboxLoading && !inbox.length"
                             class="p-5 text-center text-sm text-stone-500"
@@ -101,7 +120,9 @@
                                 Start a conversation
                             </button>
                         </div>
-                        <ul class="space-y-1">
+                        <ul
+                            class="divide-y divide-stone-100 lg:space-y-1 lg:divide-y-0"
+                        >
                             <li
                                 v-for="conversation in sortedInbox"
                                 :key="conversation.id"
@@ -109,7 +130,7 @@
                                 <Link
                                     :href="showConversation(conversation.id)"
                                     preserve-state
-                                    class="flex min-h-22 items-center gap-3 rounded-xl p-3"
+                                    class="flex min-h-18 items-center gap-3 px-4 py-2 lg:min-h-22 lg:rounded-xl lg:p-3"
                                     :class="
                                         conversation.id === conversationId
                                             ? 'bg-lilac'
@@ -300,6 +321,10 @@ const workspaceStyle = computed(() =>
           }
         : {},
 );
+const mobileNavigationStyle = computed(() => ({
+    top: `calc(${viewportOffset.value}px + ${viewportHeight.value ? `${viewportHeight.value}px` : '100dvh'} - 4.5rem - 1px - env(safe-area-inset-bottom))`,
+    bottom: 'auto',
+}));
 const sortedInbox = computed(() =>
     [...inbox.value].sort(
         (a, b) => b.updated_at.localeCompare(a.updated_at) || b.id - a.id,
@@ -430,27 +455,22 @@ onBeforeUnmount(() => {
     min-height: 25rem;
 }
 @media (max-width: 1023px) {
-    .messages-workspace-open.messages-compact {
+    .messages-workspace {
         position: fixed;
         inset-inline: 0;
         top: var(--messages-offset, 0px);
-        z-index: 45;
-        height: var(--messages-viewport, 100dvh);
-        min-height: 0;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        background: var(--color-canvas);
-    }
-    .messages-compact :deep(.conversation-panel) {
-        border: 0;
-        border-radius: 0;
-    }
-    .messages-workspace-open {
+        z-index: 30;
         height: calc(
-            var(--messages-viewport, 100dvh) - 11rem -
+            var(--messages-viewport, 100dvh) - 4.5rem - 1px -
                 env(safe-area-inset-bottom)
         );
-        min-height: 13rem;
+        min-height: 0;
+        padding-top: env(safe-area-inset-top);
+        background: var(--color-canvas);
+    }
+    .messages-workspace-open :deep(.conversation-panel) {
+        border: 0;
+        border-radius: 0;
     }
 }
 @media (min-width: 1024px) {

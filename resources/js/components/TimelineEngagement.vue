@@ -1,5 +1,5 @@
 <template>
-    <div class="mt-4 grid gap-3">
+    <div class="mt-2 grid gap-1 lg:mt-4 lg:gap-3">
         <div
             v-if="showActions"
             class="flex flex-row items-center gap-2"
@@ -16,25 +16,29 @@
             <div class="flex flex-row items-center gap-2">
                 <button
                     type="button"
-                    class="inline-flex min-h-11 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stone-200 px-2.5 py-1.5 text-sm font-semibold transition-[background-color,box-shadow,translate] focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60 lg:border lg:border-stone-200"
                     :class="
                         post.heartedByViewer
-                            ? 'bg-blush text-rose-700'
-                            : 'bg-white text-zinc-700 hover:bg-[#ffe0e5]'
+                            ? 'text-rose-700'
+                            : 'text-zinc-700 hover:text-rose-700'
                     "
                     :disabled="heartProcessing"
                     :aria-pressed="post.heartedByViewer"
                     :aria-label="'Heart ' + post.title"
                     @click="togglePostHeart"
                 >
-                    <AppIcon name="fa-solid fa-heart" />
+                    <Heart
+                        :size="18"
+                        :fill="post.heartedByViewer ? 'currentColor' : 'none'"
+                        aria-hidden="true"
+                    />
                     <span>{{ post.heartsCount }}</span>
                 </button>
 
                 <button
                     v-if="allowComments"
                     type="button"
-                    class="inline-flex min-h-11 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-zinc-700 transition-[background-color,box-shadow,translate] hover:bg-mint focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
+                    class="inline-flex min-h-11 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-transparent px-2.5 py-1.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-mint focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary lg:border lg:border-stone-200 lg:bg-white"
                     :aria-expanded="isCommentFormShown"
                     :aria-controls="`comment-form-${post.id}`"
                     @click="toggleCommentForm"
@@ -51,14 +55,14 @@
                 showComments &&
                 (post.commentsCount > 0 || isCommentFormShown)
             "
-            class="mt-5 grid gap-4 border-t border-stone-200 pt-5 pb-3 sm:mt-6"
+            class="grid gap-0 border-t border-stone-200 pt-2 lg:mt-6 lg:gap-4 lg:pt-5 lg:pb-3"
         >
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between gap-3 pb-1 lg:pb-0">
                 <h3 class="text-xs font-semibold tracking-normal text-zinc-950">
                     Family comments
                 </h3>
                 <span
-                    class="rounded-xl border border-stone-200 bg-butter px-2 py-0.5 text-xs font-semibold"
+                    class="text-xs font-semibold text-stone-500 lg:rounded-xl lg:border lg:border-stone-200 lg:bg-butter lg:px-2 lg:py-0.5 lg:text-inherit"
                 >
                     {{ post.commentsCount }}
                 </span>
@@ -67,20 +71,20 @@
             <article
                 v-for="comment in visibleComments"
                 :key="comment.id"
-                class="rounded-xl border border-stone-200 bg-white p-4"
+                class="min-w-0 border-b border-stone-100 py-2 lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-4"
             >
                 <div
-                    class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-600"
+                    class="flex items-center gap-2 text-xs text-zinc-600 lg:flex-wrap lg:gap-x-3 lg:gap-y-2"
                 >
                     <div
-                        class="flex size-8 items-center justify-center rounded-xl border border-stone-200 bg-primary text-xs font-semibold text-white"
+                        class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white lg:size-8 lg:rounded-xl lg:border lg:border-stone-200"
                     >
                         {{ userInitials(comment.author_fullname || 'Family') }}
                     </div>
 
                     <Link
                         :href="home({ query: queryForAuthor(comment.author) })"
-                        class="font-semibold hover:underline"
+                        class="min-w-0 flex-1 truncate font-semibold hover:underline lg:flex-none"
                         :class="
                             activeAuthor === comment.author.toLowerCase()
                                 ? 'text-primary'
@@ -90,26 +94,36 @@
                         {{ comment.author_fullname }}
                     </Link>
 
-                    <span class="grow text-right font-semibold">{{
-                        comment.createdAt
-                    }}</span>
+                    <span
+                        class="ml-auto shrink-0 text-right text-[10px] font-medium lg:grow lg:text-xs lg:font-semibold"
+                        >{{ comment.createdAt }}</span
+                    >
                 </div>
-                <p class="mt-4 text-sm leading-6 font-medium text-zinc-700">
+                <p
+                    class="mt-1 text-sm leading-6 break-words whitespace-pre-line text-zinc-700 lg:mt-4 lg:font-medium"
+                >
                     {{ comment.content }}
                 </p>
                 <button
                     type="button"
-                    class="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-stone-200 px-2 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 min-w-11 cursor-pointer items-center gap-1.5 rounded-xl px-2 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 lg:mt-4 lg:border lg:border-stone-200"
                     :class="
                         comment.heartedByViewer
-                            ? 'bg-blush text-rose-700'
-                            : 'bg-white text-zinc-600 hover:bg-[#ffe0e5]'
+                            ? 'text-rose-700'
+                            : 'text-zinc-600 hover:text-rose-700'
                     "
                     :disabled="commentHeartProcessing === comment.id"
                     :aria-pressed="comment.heartedByViewer"
+                    :aria-label="`Heart comment by ${comment.author_fullname}`"
                     @click="toggleCommentHeart(comment.id)"
                 >
-                    <AppIcon name="fa-solid fa-heart" />
+                    <Heart
+                        :size="16"
+                        :fill="
+                            comment.heartedByViewer ? 'currentColor' : 'none'
+                        "
+                        aria-hidden="true"
+                    />
                     <span>{{ comment.heartsCount }}</span>
                 </button>
             </article>
@@ -117,7 +131,7 @@
             <button
                 v-if="hiddenCommentCount > 0"
                 type="button"
-                class="w-fit cursor-pointer rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-butter"
+                class="min-h-11 w-fit cursor-pointer rounded-xl px-2 py-1.5 text-sm font-semibold text-primary hover:underline lg:min-h-0 lg:border lg:border-stone-200 lg:bg-white lg:px-3 lg:text-zinc-700 lg:hover:bg-butter"
                 @click="showAllComments = true"
             >
                 Show {{ hiddenCommentCount }} more
@@ -127,7 +141,7 @@
             <form
                 v-if="isCommentFormShown"
                 :id="`comment-form-${post.id}`"
-                class="grid gap-3 rounded-xl border border-stone-200 bg-butter p-4"
+                class="grid gap-2 pt-3 lg:gap-3 lg:rounded-xl lg:border lg:border-stone-200 lg:bg-butter lg:p-4"
                 :class="commentForm.processing ? 'opacity-60' : ''"
                 @submit.prevent="submitComment"
             >
@@ -140,7 +154,7 @@
                     name="content"
                     rows="2"
                     placeholder="Add to the story..."
-                    class="w-full resize-none rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm leading-6 font-medium text-zinc-700 placeholder:text-zinc-400"
+                    class="w-full resize-none rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm leading-6 font-medium text-zinc-700 placeholder:text-zinc-400 lg:px-4 lg:py-3"
                     required
                     :disabled="commentForm.processing"
                 />
@@ -152,7 +166,7 @@
                 </p>
                 <button
                     type="submit"
-                    class="cursor-pointer justify-self-end rounded-xl border border-stone-200 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    class="min-h-11 cursor-pointer justify-self-end rounded-xl border border-stone-200 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="commentForm.processing"
                 >
                     {{ commentForm.processing ? 'Posting…' : 'Post comment' }}
@@ -164,6 +178,7 @@
 
 <script setup lang="ts">
 import { Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Heart } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { store as storeComment } from '@/actions/App/Http/Controllers/CommentController';
 import { toggle as toggleCommentHeartRoute } from '@/actions/App/Http/Controllers/CommentHeartController';
@@ -175,6 +190,7 @@ import type { PageProps, TimelinePost } from '@/types';
 const props = withDefaults(
     defineProps<{
         post: TimelinePost;
+        openPost?: string;
         allowComments?: boolean;
         commentsOpen?: boolean;
         rail?: boolean;
@@ -223,6 +239,12 @@ const isCommentFormShown = computed(() => {
 });
 
 const toggleCommentForm = () => {
+    if (props.openPost) {
+        router.visit(props.openPost);
+
+        return;
+    }
+
     const nextValue = !isCommentFormShown.value;
 
     if (props.commentsOpen === undefined) {

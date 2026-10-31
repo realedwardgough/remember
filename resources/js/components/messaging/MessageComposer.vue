@@ -42,10 +42,10 @@
                 ref="input"
                 :value="modelValue"
                 :disabled="disabled"
-                rows="2"
+                rows="1"
                 maxlength="20000"
                 placeholder="Write a message…"
-                class="max-h-40 min-h-12 min-w-0 flex-1 resize-y border-0 bg-transparent py-2.5 text-base outline-none"
+                class="max-h-40 min-h-11 min-w-0 flex-1 resize-none border-0 bg-transparent py-2.5 text-base outline-none"
                 :aria-invalid="tooLong || undefined"
                 :aria-describedby="tooLong ? 'message-length-error' : undefined"
                 @input="update"
@@ -90,6 +90,7 @@
     </form>
 </template>
 <script setup lang="ts">
+import { useTextareaAutosize } from '@vueuse/core';
 import { ImagePlus, Send } from 'lucide-vue-next';
 import { computed, nextTick, ref } from 'vue';
 import EmojiPicker from '@/components/messaging/EmojiPicker.vue';
@@ -107,7 +108,9 @@ const emit = defineEmits<{
     blur: [];
     'update:photos': [photos: File[]];
 }>();
-const input = ref<HTMLTextAreaElement | null>(null);
+const { textarea: input } = useTextareaAutosize({
+    input: computed(() => props.modelValue),
+});
 const photoInput = ref<HTMLInputElement | null>(null);
 const photoError = ref('');
 function removePhoto(index: number) {

@@ -24,12 +24,16 @@
                 </div>
             </template>
             <template v-else>
-                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div
+                    class="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0"
+                    aria-label="Post photos"
+                    tabindex="0"
+                >
                     <button
                         v-for="image in visibleImages"
                         :key="image.id"
                         type="button"
-                        class="group relative aspect-[4/3] cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                        class="group relative aspect-[4/3] w-[80%] shrink-0 cursor-zoom-in snap-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 lg:w-auto"
                         @click="openImage(image)"
                     >
                         <img
@@ -45,7 +49,7 @@
             <button
                 v-if="post.images.length > imagePreviewLimit"
                 type="button"
-                class="min-h-11 justify-self-start rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                class="hidden min-h-11 justify-self-start rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 lg:block"
                 @click="showAllImages = !showAllImages"
             >
                 {{
@@ -73,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import ImageViewer from '@/components/ImageViewer.vue';
 import type { TimelineMedia, TimelinePost } from '@/types';
@@ -81,12 +86,13 @@ const props = defineProps<{
     post: TimelinePost;
 }>();
 
+const isMobile = useMediaQuery('(max-width: 1023px)');
 const imagePreviewLimit = 5;
 const showAllImages = ref(false);
 const selectedImage = ref<TimelineMedia | null>(null);
 
 const visibleImages = computed(() => {
-    if (showAllImages.value) {
+    if (isMobile.value || showAllImages.value) {
         return props.post.images;
     }
 

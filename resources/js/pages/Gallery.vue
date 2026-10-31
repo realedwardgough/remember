@@ -9,8 +9,16 @@
 
         <Head title="Gallery" />
 
-        <section class="grid gap-6">
+        <section class="grid gap-3 lg:gap-6">
+            <header class="flex items-center justify-between gap-3 lg:hidden">
+                <h1 class="text-lg font-semibold">Photos</h1>
+                <span class="text-xs text-stone-500"
+                    >{{ images.length }}
+                    {{ images.length === 1 ? 'photo' : 'photos' }}</span
+                >
+            </header>
             <PageHeader
+                class="hidden lg:flex"
                 title="A little look back"
                 eyebrow="Family photos"
                 description="All your captured moments, together in one place."
@@ -57,20 +65,21 @@
 
             <div
                 v-else
-                class="grid grid-cols-2 items-stretch gap-3 xl:grid-cols-3"
+                class="-mx-4 grid grid-cols-2 items-stretch gap-px sm:-mx-8 lg:mx-0 lg:gap-3 xl:grid-cols-3"
             >
                 <article
                     v-for="image in images"
                     :key="image.id"
-                    class="group flex h-full flex-col rounded-xl border border-stone-200 bg-white p-2 transition duration-200 hover:-translate-y-1"
+                    class="group min-w-0 lg:flex lg:h-full lg:flex-col lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-2 lg:transition lg:duration-200 lg:hover:-translate-y-1"
                 >
                     <button
                         type="button"
+                        :aria-label="`Open photo: ${image.postTitle || image.name}`"
                         class="block w-full cursor-zoom-in focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
                         @click="selectedImage = image"
                     >
                         <div
-                            class="relative aspect-square overflow-hidden rounded-xl border border-stone-200 bg-canvas"
+                            class="relative aspect-square overflow-hidden bg-canvas lg:rounded-xl lg:border lg:border-stone-200"
                         >
                             <img
                                 :src="image.url"
@@ -79,7 +88,7 @@
                                 loading="lazy"
                             />
                             <div
-                                class="absolute top-3 right-3 flex size-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-zinc-950 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100"
+                                class="absolute top-3 right-3 hidden size-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-zinc-950 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100 lg:flex"
                                 aria-hidden="true"
                             >
                                 <AppIcon
@@ -89,9 +98,7 @@
                         </div>
                     </button>
 
-                    <div
-                        class="grid min-w-0 flex-1 gap-3 px-1 py-3 sm:p-3 sm:pt-4"
-                    >
+                    <div class="hidden min-w-0 flex-1 gap-3 p-3 pt-4 lg:grid">
                         <div class="min-w-0">
                             <h2
                                 class="truncate text-base font-semibold text-zinc-950"

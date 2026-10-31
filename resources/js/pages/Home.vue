@@ -9,8 +9,8 @@
 
         <Head :title="timeline.name" />
 
-        <section class="grid content-start gap-6">
-            <header class="flex items-start justify-between gap-4">
+        <section class="grid content-start gap-3 lg:gap-6">
+            <header class="hidden items-start justify-between gap-4 lg:flex">
                 <div>
                     <p class="mb-2 text-xs font-medium text-primary">
                         Our family story
@@ -27,9 +27,6 @@
                     </p>
                 </div>
                 <div class="flex shrink-0 flex-col gap-2 sm:flex-row">
-                    <Link :href="gallery()" class="button-secondary lg:hidden">
-                        <AppIcon name="fa-solid fa-images" /> Photos
-                    </Link>
                     <button
                         type="button"
                         class="button-primary hidden shrink-0 sm:flex"
@@ -40,7 +37,7 @@
                 </div>
             </header>
             <nav
-                aria-label="Filter by post type"
+                aria-label="Timeline categories"
                 class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
             >
                 <Link
@@ -74,17 +71,23 @@
                         }[type]
                     }}</Link
                 >
+                <Link
+                    :href="gallery()"
+                    class="type-chip bg-white text-stone-600 lg:hidden"
+                >
+                    <AppIcon name="fa-solid fa-images" /> Photos
+                </Link>
             </nav>
 
             <section
                 v-if="hasActiveFilters"
-                class="rounded-xl border border-stone-200 bg-white p-5"
+                class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white p-2 lg:block lg:p-5"
                 aria-label="Active timeline filters"
             >
                 <div
-                    class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    class="order-last shrink-0 lg:flex lg:items-center lg:justify-between lg:gap-3"
                 >
-                    <div>
+                    <div class="hidden lg:block">
                         <p
                             class="text-xs font-semibold tracking-normal text-primary"
                         >
@@ -98,22 +101,28 @@
                     <Link
                         :href="home()"
                         preserve-scroll
-                        class="w-fit rounded-xl border border-stone-200 bg-butter px-3 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-primary hover:text-white"
+                        class="inline-flex min-h-11 items-center rounded-xl px-2 text-xs font-semibold whitespace-nowrap text-primary hover:bg-primary hover:text-white lg:min-h-0 lg:w-fit lg:border lg:border-stone-200 lg:bg-butter lg:px-3 lg:py-1.5 lg:text-zinc-950"
                     >
                         Clear all
                     </Link>
                 </div>
 
-                <div class="mt-4 flex flex-wrap gap-2">
+                <div
+                    class="flex min-w-0 flex-1 gap-2 overflow-x-auto overscroll-x-contain lg:mt-4 lg:flex-wrap lg:overflow-visible"
+                >
                     <template
                         v-for="filter in activeFilterChips"
                         :key="filter.key"
                     >
                         <span
-                            class="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-butter px-3 py-1.5 text-sm font-bold text-zinc-800"
+                            class="inline-flex shrink-0 items-center gap-1 rounded-xl border border-stone-200 bg-butter pl-2 text-xs font-semibold text-zinc-800 lg:gap-2 lg:px-3 lg:py-1.5 lg:text-sm lg:font-bold"
                         >
                             <span class="text-primary">{{ filter.label }}</span>
-                            <span>{{ filter.value }}</span>
+                            <span
+                                class="max-w-40 truncate lg:max-w-none"
+                                :title="filter.value"
+                                >{{ filter.value }}</span
+                            >
                             <Link
                                 :href="
                                     home({
@@ -121,7 +130,7 @@
                                     })
                                 "
                                 preserve-scroll
-                                class="inline-flex size-11 items-center justify-center rounded-xl border border-stone-200 bg-white text-zinc-700 hover:bg-primary hover:text-white"
+                                class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-zinc-700 hover:bg-primary hover:text-white lg:border lg:border-stone-200 lg:bg-white"
                                 :aria-label="`Clear ${filter.label} filter`"
                             >
                                 <AppIcon
