@@ -73,7 +73,12 @@
         </div>
     </div>
 
-    <ImageViewer :image="selectedImage" @close="closeImage" />
+    <ImageViewer
+        :image="selectedImage"
+        :images="post.images"
+        @select="selectedImage = $event"
+        @close="closeImage"
+    />
 </template>
 
 <script setup lang="ts">

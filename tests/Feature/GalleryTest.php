@@ -53,6 +53,7 @@ class GalleryTest extends TestCase
                 ->where('images.0.mimeType', 'image/jpeg')
                 ->where('images.0.width', 1200)
                 ->where('images.0.height', 800)
+                ->where('images.0.postId', $post->id)
                 ->where('images.0.postTitle', 'First birthday photos')
                 ->where('images.0.postDate', '12 April 2026')
                 ->where('filters.search', '')

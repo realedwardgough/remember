@@ -132,8 +132,10 @@
 
         <ImageViewer
             :image="selectedImage"
+            :images="selectedPostImages"
             :title="selectedImage?.postTitle"
             :subtitle="selectedImage?.postDate"
+            @select="selectImage"
             @close="selectedImage = null"
         />
 
@@ -160,7 +162,7 @@
 
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import ImageViewer from '@/components/ImageViewer.vue';
 import Modal from '@/components/Modal.vue';
@@ -169,16 +171,28 @@ import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import type { GalleryImage } from '@/types';
+import type { GalleryImage, ImageViewerMedia } from '@/types';
 
 type ActiveModal = 'post' | 'search' | null;
 
-defineProps<{
+const props = defineProps<{
     images: GalleryImage[];
 }>();
 
 const activeModal = ref<ActiveModal>(null);
 const selectedImage = ref<GalleryImage | null>(null);
+
+const selectedPostImages = computed(() =>
+    props.images.filter(
+        (image) => image.postId === selectedImage.value?.postId,
+    ),
+);
+const selectImage = (image: ImageViewerMedia) => {
+    selectedImage.value =
+        selectedPostImages.value.find(
+            (candidate) => candidate.id === image.id,
+        ) ?? null;
+};
 
 const formatFileSize = (bytes: number) => {
     if (bytes < 1024) {

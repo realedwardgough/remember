@@ -11,6 +11,7 @@ export type GalleryImage = {
     height: number | null;
     mimeType: string;
     size: number;
+    postId: number;
     postTitle: string | null;
     postDate: string | null;
 };

@@ -14,12 +14,47 @@
                 <DialogTitle class="sr-only">{{
                     title || image?.name || 'Photo'
                 }}</DialogTitle>
-                <img
-                    v-if="image"
-                    :src="image.url"
-                    :alt="image.name"
-                    class="max-h-full w-full object-contain"
-                />
+                <div
+                    class="flex h-full w-full touch-pan-y touch-pinch-zoom items-center justify-center"
+                    @touchstart.passive="startSwipe"
+                    @touchend.passive="endSwipe"
+                    @touchcancel="swipeStart = null"
+                >
+                    <img
+                        v-if="image"
+                        :key="image.id"
+                        :src="image.url"
+                        :alt="image.name"
+                        class="max-h-full w-full object-contain"
+                        draggable="false"
+                    />
+                </div>
+                <div
+                    v-if="hasMultipleImages"
+                    class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-5 bg-gradient-to-t from-black/60 to-transparent px-3 pt-8 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                >
+                    <button
+                        type="button"
+                        class="flex size-11 items-center justify-center rounded-full bg-black/30 disabled:opacity-30"
+                        aria-label="Previous photo"
+                        :disabled="currentIndex <= 0"
+                        @click="navigate(-1)"
+                    >
+                        <ChevronLeft :size="22" />
+                    </button>
+                    <p class="text-sm" aria-live="polite" aria-atomic="true">
+                        {{ currentIndex + 1 }} of {{ images.length }}
+                    </p>
+                    <button
+                        type="button"
+                        class="flex size-11 items-center justify-center rounded-full bg-black/30 disabled:opacity-30"
+                        aria-label="Next photo"
+                        :disabled="currentIndex >= images.length - 1"
+                        @click="navigate(1)"
+                    >
+                        <ChevronRight :size="22" />
+                    </button>
+                </div>
                 <div
                     class="absolute inset-x-0 top-0 flex items-center justify-between gap-3 bg-gradient-to-b from-black/60 to-transparent px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-8"
                 >
@@ -52,11 +87,50 @@
         @close="emit('close')"
     >
         <div v-if="image" class="grid gap-4">
-            <img
-                :src="image.url"
-                :alt="image.name"
-                class="mx-auto max-h-[60dvh] max-w-full rounded-xl object-contain"
-            />
+            <div
+                class="touch-pan-y touch-pinch-zoom"
+                @touchstart.passive="startSwipe"
+                @touchend.passive="endSwipe"
+                @touchcancel="swipeStart = null"
+            >
+                <img
+                    :key="image.id"
+                    :src="image.url"
+                    :alt="image.name"
+                    class="mx-auto max-h-[60dvh] max-w-full rounded-xl object-contain"
+                    draggable="false"
+                />
+            </div>
+            <div
+                v-if="hasMultipleImages"
+                class="flex items-center justify-center gap-4"
+            >
+                <button
+                    type="button"
+                    class="button-secondary disabled:opacity-30"
+                    aria-label="Previous photo"
+                    :disabled="currentIndex <= 0"
+                    @click="navigate(-1)"
+                >
+                    <ChevronLeft :size="20" />Previous
+                </button>
+                <p
+                    class="text-sm text-stone-500"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    {{ currentIndex + 1 }} of {{ images.length }}
+                </p>
+                <button
+                    type="button"
+                    class="button-secondary disabled:opacity-30"
+                    aria-label="Next photo"
+                    :disabled="currentIndex >= images.length - 1"
+                    @click="navigate(1)"
+                >
+                    Next<ChevronRight :size="20" />
+                </button>
+            </div>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p
                     class="min-w-0 flex-1 text-xs leading-5 break-words text-stone-500"
@@ -75,8 +149,8 @@
     </Modal>
 </template>
 <script setup lang="ts">
-import { useMediaQuery } from '@vueuse/core';
-import { Download, X } from 'lucide-vue-next';
+import { useEventListener, useMediaQuery } from '@vueuse/core';
+import { ChevronLeft, ChevronRight, Download, X } from 'lucide-vue-next';
 import {
     DialogContent,
     DialogOverlay,
@@ -84,14 +158,75 @@ import {
     DialogRoot,
     DialogTitle,
 } from 'reka-ui';
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import Modal from '@/components/Modal.vue';
 import type { ImageViewerMedia } from '@/types';
 const props = defineProps<{
     image: ImageViewerMedia | null;
+    images?: ImageViewerMedia[];
     title?: string | null;
     subtitle?: string | null;
 }>();
+const images = computed(
+    () => props.images ?? (props.image ? [props.image] : []),
+);
+const currentIndex = computed(() =>
+    images.value.findIndex((image) => image.id === props.image?.id),
+);
+const hasMultipleImages = computed(
+    () => currentIndex.value >= 0 && images.value.length > 1,
+);
+const navigate = (direction: number) => {
+    if (!hasMultipleImages.value) {
+        return;
+    }
+
+    const image = images.value[currentIndex.value + direction];
+
+    if (image) {
+        emit('select', image);
+    }
+};
+let swipeStart: { x: number; y: number } | null = null;
+const startSwipe = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    swipeStart =
+        event.touches.length === 1 && touch
+            ? { x: touch.clientX, y: touch.clientY }
+            : null;
+};
+const endSwipe = (event: TouchEvent) => {
+    const start = swipeStart;
+    swipeStart = null;
+    const touch = event.changedTouches[0];
+
+    if (!start || !touch || event.touches.length > 0) {
+        return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) >= 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        navigate(deltaX < 0 ? 1 : -1);
+    }
+};
+useEventListener('keydown', (event: KeyboardEvent) => {
+    if (
+        !props.image ||
+        !hasMultipleImages.value ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+    ) {
+        return;
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigate(event.key === 'ArrowLeft' ? -1 : 1);
+    }
+});
 const isMobile = useMediaQuery('(max-width: 1023px)');
 let previouslyFocused: HTMLElement | null = null;
 watch(
@@ -106,5 +241,5 @@ const restoreFocus = () => {
     previouslyFocused?.focus();
     previouslyFocused = null;
 };
-const emit = defineEmits<{ close: [] }>();
+const emit = defineEmits<{ close: []; select: [image: ImageViewerMedia] }>();
 </script>
