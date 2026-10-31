@@ -1,12 +1,39 @@
 <template>
     <article
-        class="surface min-w-0 overflow-hidden"
+        ref="card"
+        class="surface relative min-w-0 overflow-hidden"
         :class="{
             'max-lg:rounded-none max-lg:border-x-0 max-lg:border-t-0 max-lg:shadow-none':
                 mobileFeed || detail,
+            'max-lg:touch-manipulation': post.type !== 'Letter',
         }"
         @click="openPost"
+        @touchmove.passive="cancelTap"
+        @touchcancel="cancelTap"
+        @pointerdown.capture="cancelInteractiveTap"
     >
+        <Transition
+            enter-active-class="transition duration-150 ease-out"
+            enter-from-class="scale-50 opacity-0"
+            enter-to-class="scale-100 opacity-100"
+            leave-active-class="transition duration-300 ease-in"
+            leave-to-class="scale-125 opacity-0"
+        >
+            <span
+                v-if="heartFeedback"
+                class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 text-rose-500 drop-shadow-lg"
+                :style="{ left: `${heartPoint.x}px`, top: `${heartPoint.y}px` }"
+                aria-hidden="true"
+                ><Heart
+                    :size="76"
+                    fill="currentColor"
+                    stroke="white"
+                    :stroke-width="1.5"
+            /></span>
+        </Transition>
+        <span class="sr-only" role="status">{{
+            heartFeedback ? 'Post liked' : ''
+        }}</span>
         <Link
             v-if="!detail"
             :href="postUrl"
@@ -43,7 +70,7 @@
             />
         </header>
         <div class="px-4 pb-4 sm:px-6 sm:pb-5">
-            <TimelineMedia :post="post" />
+            <TimelineMedia :post="post" @double-tap="likePost" />
             <div class="mt-4">
                 <p
                     v-if="post.type === 'Letter'"
@@ -65,6 +92,8 @@
             <TimelineEngagement
                 v-if="post.type !== 'Letter'"
                 :post="post"
+                :heart-processing="heartProcessing"
+                @toggle-heart="togglePostHeart()"
                 :allow-comments="post.type !== 'Event'"
                 :comments-open="detail && isMobile ? true : undefined"
                 :open-post="!detail && isMobile ? postUrl : undefined"
@@ -75,12 +104,21 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useMediaQuery } from '@vueuse/core';
-import { CalendarDays, Flag, Image, LockKeyhole, Mail } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    CalendarDays,
+    Flag,
+    Heart,
+    Image,
+    LockKeyhole,
+    Mail,
+} from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref } from 'vue';
+import { toggle as toggleHeart } from '@/actions/App/Http/Controllers/HeartController';
 import TimelineEngagement from '@/components/TimelineEngagement.vue';
 import TimelineMedia from '@/components/TimelineMedia.vue';
 import TimelinePostActions from '@/components/TimelinePostActions.vue';
 import TimelineTagLinks from '@/components/TimelineTagLinks.vue';
+import { useDoubleTap } from '@/composables/useDoubleTap';
 import { home } from '@/routes';
 import { show } from '@/routes/posts';
 import type { PageProps, TimelinePost } from '@/types';
@@ -95,9 +133,74 @@ const page = usePage<PageProps>();
 const postUrl = computed(() =>
     show.url(props.post.id, { query: { returnTo: page.url } }),
 );
+const card = ref<HTMLElement | null>(null);
+const heartProcessing = ref(false);
+const heartFeedback = ref(false);
+const heartPoint = ref({ x: 0, y: 0 });
+let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
+const showHeart = (event: MouseEvent) => {
+    const bounds = card.value?.getBoundingClientRect();
+
+    if (!bounds) {
+        return;
+    }
+
+    heartPoint.value = {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+    };
+    heartFeedback.value = true;
+    clearTimeout(feedbackTimer);
+    feedbackTimer = setTimeout(() => {
+        heartFeedback.value = false;
+    }, 700);
+};
+const togglePostHeart = (onSuccess?: () => void) => {
+    if (heartProcessing.value || props.post.type === 'Letter') {
+        return;
+    }
+
+    heartProcessing.value = true;
+    router.visit(toggleHeart(props.post.id), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess,
+        onFinish: () => {
+            heartProcessing.value = false;
+        },
+    });
+};
+const likePost = (event: MouseEvent) => {
+    if (
+        !isMobile.value ||
+        props.post.type === 'Letter' ||
+        heartProcessing.value
+    ) {
+        return;
+    }
+
+    if (props.post.heartedByViewer) {
+        showHeart(event);
+
+        return;
+    }
+
+    togglePostHeart(() => showHeart(event));
+};
+const { handleTap, cancelTap } = useDoubleTap({
+    enabled: () => isMobile.value && props.post.type !== 'Letter',
+    onDoubleTap: likePost,
+});
+const interactiveElements =
+    'a, button, input, textarea, select, [contenteditable], [role="dialog"], [data-post-engagement]';
+const cancelInteractiveTap = (event: PointerEvent) => {
+    if ((event.target as HTMLElement).closest(interactiveElements)) {
+        cancelTap();
+    }
+};
+onBeforeUnmount(() => clearTimeout(feedbackTimer));
 const openPost = (event: MouseEvent) => {
     if (
-        props.detail ||
         !isMobile.value ||
         event.defaultPrevented ||
         window.getSelection()?.toString()
@@ -105,15 +208,15 @@ const openPost = (event: MouseEvent) => {
         return;
     }
 
-    if (
-        (event.target as HTMLElement).closest(
-            'a, button, input, textarea, select, [role="dialog"]',
-        )
-    ) {
+    if ((event.target as HTMLElement).closest(interactiveElements)) {
         return;
     }
 
-    router.visit(postUrl.value);
+    handleTap(event, () => {
+        if (!props.detail) {
+            router.visit(postUrl.value);
+        }
+    });
 };
 const typeStyles = {
     Memory: 'bg-blush',

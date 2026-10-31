@@ -1,5 +1,5 @@
 <template>
-    <div class="mt-2 grid gap-1 lg:mt-4 lg:gap-3">
+    <div class="mt-2 grid gap-1 lg:mt-4 lg:gap-3" data-post-engagement>
         <div
             v-if="showActions"
             class="flex flex-row items-center gap-2"
@@ -25,7 +25,7 @@
                     :disabled="heartProcessing"
                     :aria-pressed="post.heartedByViewer"
                     :aria-label="'Heart ' + post.title"
-                    @click="togglePostHeart"
+                    @click="emit('toggleHeart')"
                 >
                     <Heart
                         :size="18"
@@ -182,7 +182,6 @@ import { Heart } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { store as storeComment } from '@/actions/App/Http/Controllers/CommentController';
 import { toggle as toggleCommentHeartRoute } from '@/actions/App/Http/Controllers/CommentHeartController';
-import { toggle as toggleHeart } from '@/actions/App/Http/Controllers/HeartController';
 import AppIcon from '@/components/AppIcon.vue';
 import { home } from '@/routes';
 import type { PageProps, TimelinePost } from '@/types';
@@ -190,6 +189,7 @@ import type { PageProps, TimelinePost } from '@/types';
 const props = withDefaults(
     defineProps<{
         post: TimelinePost;
+        heartProcessing?: boolean;
         openPost?: string;
         allowComments?: boolean;
         commentsOpen?: boolean;
@@ -224,11 +224,11 @@ const queryForAuthor = (author: string) => {
 
 const emit = defineEmits<{
     'update:commentsOpen': [value: boolean];
+    toggleHeart: [];
 }>();
 
 const showAllComments = ref(false);
 const internalShowCommentForm = ref(false);
-const heartProcessing = ref(false);
 const commentHeartProcessing = ref<number | null>(null);
 const commentForm = useForm({
     content: '',
@@ -252,19 +252,6 @@ const toggleCommentForm = () => {
     }
 
     emit('update:commentsOpen', nextValue);
-};
-
-const togglePostHeart = () => {
-    router.visit(toggleHeart(props.post.id), {
-        preserveScroll: true,
-        preserveState: true,
-        onStart: () => {
-            heartProcessing.value = true;
-        },
-        onFinish: () => {
-            heartProcessing.value = false;
-        },
-    });
 };
 
 const toggleCommentHeart = (commentId: number) => {
