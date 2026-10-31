@@ -242,3 +242,133 @@ test('photo single taps open the viewer and double taps emit a like without open
     assert.equal(emitted[0][0], 'doubleTap');
     env.dispose();
 });
+
+function touchEvent(timeStamp, x = 100, y = 100, ended = false) {
+    const point = { clientX: x, clientY: y };
+
+    return {
+        timeStamp,
+        touches: ended ? [] : [point],
+        changedTouches: [point],
+        target: { closest: () => false },
+        cancelable: true,
+        preventDefault() {
+            this.defaultPrevented = true;
+        },
+    };
+}
+
+test('real touch sequence tolerates finger jitter and ignores zero-detail synthetic mouse clicks', () => {
+    const env = setup();
+    const card = env.component('TimelineCard', {
+        post: { id: 7, type: 'Memory', heartedByViewer: false },
+    });
+
+    for (const start of [100, 350]) {
+        card.startPostTouch(touchEvent(start));
+        card.handleTouchMove(touchEvent(start + 30, 103, 102));
+        const end = touchEvent(start + 60, 103, 102, true);
+        card.endPostTouch(end);
+        assert.equal(end.defaultPrevented, true);
+        // Some mobile browsers emit a click even when its detail/type looks like
+        // a keyboard or mouse click. It must not bypass the touch recognizer.
+        card.openPost(tap(start + 70, { detail: 0, pointerType: 'mouse' }));
+    }
+
+    env.flush();
+    assert.equal(env.visits.length, 1);
+    assert.equal(env.visits[0].url.url, '/posts/7/heart');
+    env.dispose();
+});
+
+test('starting the second touch pauses single-tap navigation until finger lift', () => {
+    const env = setup();
+    let singles = 0;
+    let doubles = 0;
+    const gesture = env.useDoubleTap({
+        enabled: () => true,
+        onDoubleTap: () => doubles++,
+    });
+    const single = () => singles++;
+    gesture.handleTouchStart(touchEvent(100));
+    gesture.handleTouchEnd(touchEvent(150, 100, 100, true), single);
+    gesture.handleTouchStart(touchEvent(500));
+    env.flush();
+    assert.equal(
+        singles,
+        0,
+        'second touch prevents the navigation timer firing',
+    );
+    gesture.handleTouchEnd(touchEvent(620, 100, 100, true), single);
+    env.flush();
+    assert.equal(singles, 0);
+    assert.equal(doubles, 1);
+    env.dispose();
+});
+
+test('a single real touch opens once, and keyboard activation remains immediate', () => {
+    const env = setup();
+    const card = env.component('TimelineCard', {
+        post: { id: 7, type: 'Memory' },
+    });
+    card.startPostTouch(touchEvent(100));
+    card.endPostTouch(touchEvent(150, 100, 100, true));
+    card.openPost(tap(160));
+    assert.equal(env.visits.length, 0);
+    env.flush();
+    assert.equal(env.visits.length, 1);
+    assert.equal(env.visits[0].url, '/posts/7');
+    card.openPost(
+        tap(200, { detail: 0, clientX: 0, clientY: 0, pointerType: '' }),
+    );
+    assert.equal(env.visits.length, 2);
+    env.dispose();
+});
+
+test('scrolling, long presses, and multitouch do not become taps or open the post', () => {
+    const env = setup();
+    let calls = 0;
+    const gesture = env.useDoubleTap({
+        enabled: () => true,
+        onDoubleTap: () => calls++,
+    });
+    const single = () => calls++;
+    gesture.handleTouchStart(touchEvent(100));
+    gesture.handleTouchMove(touchEvent(130, 100, 150));
+    gesture.handleTouchEnd(touchEvent(180, 100, 150, true), single);
+    gesture.handleTap(tap(190), single);
+    gesture.handleTouchStart(touchEvent(1000));
+    gesture.handleTouchEnd(touchEvent(1700, 100, 100, true), single);
+    gesture.handleTouchStart(touchEvent(2000));
+    gesture.handleTouchMove({ ...touchEvent(2050), touches: [{}, {}] });
+    gesture.handleTouchEnd(touchEvent(2100, 100, 100, true), single);
+    env.flush();
+    assert.equal(calls, 0);
+    env.dispose();
+});
+
+test('real photo touches like without opening the viewer, including the compatibility clicks', () => {
+    const env = setup();
+    const emitted = [];
+    const media = env.component(
+        'TimelineMedia',
+        {
+            post: { type: 'Memory', images: [], files: [] },
+        },
+        (...args) => emitted.push(args),
+    );
+    const open = () => media.openImage({ id: 1 });
+
+    for (const start of [100, 350]) {
+        media.handleTouchStart(touchEvent(start));
+        media.handleTouchMove(touchEvent(start + 20, 102, 102));
+        media.handleTouchEnd(touchEvent(start + 50, 102, 102, true), open);
+        media.handleTap(tap(start + 60, { pointerType: 'mouse' }), open);
+    }
+
+    env.flush();
+    assert.equal(media.selectedImage.value, null);
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0][0], 'doubleTap');
+    env.dispose();
+});

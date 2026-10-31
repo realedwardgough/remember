@@ -8,7 +8,9 @@
             'max-lg:touch-manipulation': post.type !== 'Letter',
         }"
         @click="openPost"
-        @touchmove.passive="cancelTap"
+        @touchstart.passive="startPostTouch"
+        @touchmove.passive="handleTouchMove"
+        @touchend="endPostTouch"
         @touchcancel="cancelTap"
         @pointerdown.capture="cancelInteractiveTap"
     >
@@ -119,6 +121,7 @@ import TimelineMedia from '@/components/TimelineMedia.vue';
 import TimelinePostActions from '@/components/TimelinePostActions.vue';
 import TimelineTagLinks from '@/components/TimelineTagLinks.vue';
 import { useDoubleTap } from '@/composables/useDoubleTap';
+import type { TapPosition } from '@/composables/useDoubleTap';
 import { home } from '@/routes';
 import { show } from '@/routes/posts';
 import type { PageProps, TimelinePost } from '@/types';
@@ -138,7 +141,7 @@ const heartProcessing = ref(false);
 const heartFeedback = ref(false);
 const heartPoint = ref({ x: 0, y: 0 });
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
-const showHeart = (event: MouseEvent) => {
+const showHeart = (event: TapPosition) => {
     const bounds = card.value?.getBoundingClientRect();
 
     if (!bounds) {
@@ -170,7 +173,7 @@ const togglePostHeart = (onSuccess?: () => void) => {
         },
     });
 };
-const likePost = (event: MouseEvent) => {
+const likePost = (event: TapPosition) => {
     if (
         !isMobile.value ||
         props.post.type === 'Letter' ||
@@ -187,7 +190,13 @@ const likePost = (event: MouseEvent) => {
 
     togglePostHeart(() => showHeart(event));
 };
-const { handleTap, cancelTap } = useDoubleTap({
+const {
+    handleTap,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    cancelTap,
+} = useDoubleTap({
     enabled: () => isMobile.value && props.post.type !== 'Letter',
     onDoubleTap: likePost,
 });
@@ -197,6 +206,33 @@ const cancelInteractiveTap = (event: PointerEvent) => {
     if ((event.target as HTMLElement).closest(interactiveElements)) {
         cancelTap();
     }
+};
+const startPostTouch = (event: TouchEvent) => {
+    if ((event.target as HTMLElement).closest(interactiveElements)) {
+        cancelTap();
+
+        return;
+    }
+
+    handleTouchStart(event);
+};
+const navigatePost = () => {
+    if (!props.detail) {
+        router.visit(postUrl.value);
+    }
+};
+const endPostTouch = (event: TouchEvent) => {
+    if ((event.target as HTMLElement).closest(interactiveElements)) {
+        return;
+    }
+
+    if (window.getSelection()?.toString()) {
+        cancelTap();
+
+        return;
+    }
+
+    handleTouchEnd(event, navigatePost);
 };
 onBeforeUnmount(() => clearTimeout(feedbackTimer));
 const openPost = (event: MouseEvent) => {
@@ -212,11 +248,7 @@ const openPost = (event: MouseEvent) => {
         return;
     }
 
-    handleTap(event, () => {
-        if (!props.detail) {
-            router.visit(postUrl.value);
-        }
-    });
+    handleTap(event, navigatePost);
 };
 const typeStyles = {
     Memory: 'bg-blush',

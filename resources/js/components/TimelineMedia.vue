@@ -2,7 +2,7 @@
     <div
         v-if="post.images.length > 0 || post.files.length > 0"
         class="mt-3 grid gap-3"
-        @touchmove.passive="cancelTap"
+        @touchmove.passive="handleTouchMove"
         @touchcancel="cancelTap"
     >
         <div v-if="post.images.length > 0" class="grid gap-2">
@@ -13,6 +13,10 @@
                         :key="image.id"
                         type="button"
                         class="group relative aspect-[4/3] w-full cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:aspect-[16/9] sm:max-h-96"
+                        @touchstart.passive="handleTouchStart"
+                        @touchend="
+                            handleTouchEnd($event, () => openImage(image))
+                        "
                         @click.stop="handleTap($event, () => openImage(image))"
                     >
                         <img
@@ -36,6 +40,10 @@
                         :key="image.id"
                         type="button"
                         class="group relative aspect-[4/3] w-[80%] shrink-0 cursor-zoom-in snap-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 lg:w-auto"
+                        @touchstart.passive="handleTouchStart"
+                        @touchend="
+                            handleTouchEnd($event, () => openImage(image))
+                        "
                         @click.stop="handleTap($event, () => openImage(image))"
                     >
                         <img
@@ -88,15 +96,22 @@ import { useMediaQuery } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import ImageViewer from '@/components/ImageViewer.vue';
 import { useDoubleTap } from '@/composables/useDoubleTap';
+import type { TapPosition } from '@/composables/useDoubleTap';
 import type { TimelineMedia, TimelinePost } from '@/types';
 
 const props = defineProps<{
     post: TimelinePost;
 }>();
 
-const emit = defineEmits<{ doubleTap: [event: MouseEvent] }>();
+const emit = defineEmits<{ doubleTap: [event: TapPosition] }>();
 const isMobile = useMediaQuery('(max-width: 1023px)');
-const { handleTap, cancelTap } = useDoubleTap({
+const {
+    handleTap,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    cancelTap,
+} = useDoubleTap({
     enabled: () => isMobile.value && props.post.type !== 'Letter',
     onDoubleTap: (event) => emit('doubleTap', event),
 });
