@@ -150,7 +150,17 @@
                                 :class="{
                                     'text-right': message.sender.is_self,
                                 }"
-                                >{{ messageTime(message.created_at) }}</time
+                                >{{ messageTime(message.created_at)
+                                }}<template v-if="message.sender.is_self">
+                                    ·
+                                    {{
+                                        message.id <=
+                                        (conversation?.recipient_last_read_message_id ??
+                                            0)
+                                            ? 'Seen'
+                                            : 'Sent'
+                                    }}
+                                </template></time
                             >
                         </div>
                     </div>
@@ -521,7 +531,14 @@ function drainSync() {
     }
 }
 function updateConversation(value: DirectConversation) {
-    conversation.value = value;
+    conversation.value = {
+        ...value,
+        recipient_last_read_message_id:
+            Math.max(
+                conversation.value?.recipient_last_read_message_id ?? 0,
+                value.recipient_last_read_message_id ?? 0,
+            ) || null,
+    };
     messages.value = messages.value.map((message) => ({
         ...message,
         sender:

@@ -261,6 +261,38 @@ class MessagingTest extends TestCase
     }
 
     #[Test]
+    public function senders_can_see_only_the_recipients_confirmed_read_position(): void
+    {
+        $sender = User::factory()->create();
+        $reader = User::factory()->create();
+        $conversation = $this->conversation($sender, $reader);
+        $first = $this->send($sender, $conversation);
+        $oldToken = $this->actingAs($reader)->getJson(route('messaging.show', $conversation))->json('read_token');
+        $second = $this->send($sender, $conversation, 'Still unread');
+
+        $senderHistory = $this->actingAs($sender)->getJson(route('messaging.show', $conversation))
+            ->assertOk()->assertJsonPath('conversation.recipient_last_read_message_id', null);
+        // Reading one's own sent messages must not mark them seen by the recipient.
+        $this->putJson(route('messaging.read', $conversation), ['read_token' => $senderHistory->json('read_token')])->assertNoContent();
+        $this->getJson(route('messaging.show', $conversation))
+            ->assertJsonPath('conversation.recipient_last_read_message_id', null);
+
+        $this->actingAs($reader)->putJson(route('messaging.read', $conversation), ['read_token' => $oldToken])->assertNoContent();
+        // An incremental poll returns read updates even with no new messages.
+        $this->actingAs($sender)->getJson(route('messaging.show', $conversation).'?after_id='.$second)
+            ->assertOk()->assertJsonCount(0, 'data')
+            ->assertJsonPath('conversation.recipient_last_read_message_id', $first);
+        $this->getJson(route('messaging.index'))
+            ->assertJsonPath('data.0.recipient_last_read_message_id', $first);
+
+        $newToken = $this->actingAs($reader)->getJson(route('messaging.show', $conversation))->json('read_token');
+        $this->putJson(route('messaging.read', $conversation), ['read_token' => $newToken])->assertNoContent();
+        $this->putJson(route('messaging.read', $conversation), ['read_token' => $oldToken])->assertNoContent();
+        $this->actingAs($sender)->getJson(route('messaging.show', $conversation))
+            ->assertJsonPath('conversation.recipient_last_read_message_id', $second);
+    }
+
+    #[Test]
     public function read_tokens_cannot_be_forged_reused_by_other_users_or_other_conversations(): void
     {
         $sender = User::factory()->create();

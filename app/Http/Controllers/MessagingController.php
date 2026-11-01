@@ -75,7 +75,7 @@ class MessagingController extends Controller
     {
         $participantId = MessagingParticipant::query()->where('user_id', $request->user()->id)->value('id');
         $conversations = Conversation::query()->forUser($request->user())
-            ->with(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post'])
+            ->with(['memberships', 'firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post'])
             ->withCount(['messages as unread_count' => function (Builder $messages) use ($participantId): void {
                 $messages->where('sender_participant_id', '!=', $participantId)
                     ->whereRaw('messages.id > COALESCE((SELECT last_read_message_id FROM conversation_memberships WHERE conversation_memberships.conversation_id = conversations.id AND participant_id = ?), 0)', [$participantId]);
@@ -92,7 +92,7 @@ class MessagingController extends Controller
     public function store(StartConversationRequest $request, StartConversation $start): JsonResponse
     {
         $conversation = $start->handle($request->user(), $request->integer('recipient_id'));
-        $conversation->load(['firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post']);
+        $conversation->load(['memberships', 'firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post']);
 
         return (new ConversationResource($conversation))->response()->setStatusCode($conversation->wasRecentlyCreated ? 201 : 200);
     }
@@ -113,7 +113,7 @@ class MessagingController extends Controller
         $messages = ($after ? $query->orderBy('id') : $query->orderByDesc('id'))->limit(51)->get();
         $hasMore = $messages->count() > 50;
         $messages = $messages->take(50)->sortBy('id')->values();
-        $conversation->load(['firstParticipant.user', 'secondParticipant.user']);
+        $conversation->load(['memberships', 'firstParticipant.user', 'secondParticipant.user']);
         $lastId = $messages->last()?->id;
 
         // Return a receipt only for a message actually included in this response.

@@ -28,7 +28,7 @@ class MarkConversationRead
             ->where(fn ($query) => $query->whereNull('last_read_message_id')->orWhere('last_read_message_id', '<', $messageId))
             ->update(['last_read_message_id' => $messageId, 'updated_at' => now()]);
         if ($updated) {
-            app(MessagingUpdates::class)->dispatch($conversation->id, onlyUserId: $user->id);
+            app(MessagingUpdates::class)->dispatch($conversation->id);
         }
     }
 }

@@ -122,6 +122,27 @@ class MessagingRealtimeTest extends TestCase
     }
 
     #[Test]
+    public function read_receipts_notify_both_participants_only_when_the_read_position_advances(): void
+    {
+        $sender = User::factory()->create();
+        $reader = User::factory()->create();
+        $conversation = app(StartConversation::class)->handle($sender, $reader->id);
+        app(SendMessage::class)->handle($sender, $conversation, 'Hello', (string) Str::uuid());
+        $token = $this->actingAs($reader)->getJson(route('messaging.show', $conversation))->json('read_token');
+        Event::fake([MessagingChanged::class]);
+
+        $this->putJson(route('messaging.read', $conversation), ['read_token' => $token])->assertNoContent();
+        Event::assertDispatched(MessagingChanged::class, function (MessagingChanged $event) use ($conversation, $sender, $reader): bool {
+            return $event->conversationId === $conversation->id
+                && $event->onlyUserId === null
+                && in_array('presence-messaging.users.'.$sender->id, array_map(strval(...), $event->broadcastOn()), true)
+                && in_array('presence-messaging.users.'.$reader->id, array_map(strval(...), $event->broadcastOn()), true);
+        });
+        $this->putJson(route('messaging.read', $conversation), ['read_token' => $token])->assertNoContent();
+        Event::assertDispatchedTimes(MessagingChanged::class, 1);
+    }
+
+    #[Test]
     public function events_contain_identifiers_only_and_exclude_deleted_users_from_delivery(): void
     {
         $first = User::factory()->create();

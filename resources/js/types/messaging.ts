@@ -49,6 +49,7 @@ export type DirectConversation = {
     id: number;
     participants: MessagingParticipant[];
     can_send: boolean;
+    recipient_last_read_message_id: number | null;
     latest_message?: DirectMessage | null;
     unread_count?: number;
     updated_at: string;
