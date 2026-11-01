@@ -10,7 +10,6 @@ use App\Models\MessageAttachment;
 use App\Models\MessagePostShare;
 use App\Models\Post;
 use App\Services\Messaging\MessageImageSettings;
-use App\Models\MessagingParticipant;
 use App\Models\User;
 use App\Services\Messaging\MessagingUpdates;
 use Illuminate\Support\Facades\DB;
@@ -37,8 +36,7 @@ class SendMessage
         }
 
         return DB::transaction(function () use ($actor, $conversation, $body, $clientRequestId, $attachmentIds, $postId): Message {
-            $userIds = MessagingParticipant::query()
-                ->whereIn('id', [$conversation->first_participant_id, $conversation->second_participant_id])
+            $userIds = $conversation->participants()
                 ->whereNotNull('user_id')->pluck('user_id');
 
             // Match StartConversation's lock ordering before locking a conversation.
@@ -69,8 +67,11 @@ class SendMessage
             if ($postId !== null) {
                 $post = Post::query()->lockForUpdate()->findOrFail($postId);
                 Gate::forUser($actor)->authorize('share', $post);
-                $recipientId = $userIds->first(fn (int $id): bool => $id !== $actor->id);
-                Gate::forUser(User::query()->findOrFail($recipientId))->authorize('view', $post);
+                foreach ($userIds as $recipientId) {
+                    if ($recipientId !== $actor->id) {
+                        Gate::forUser(User::query()->findOrFail($recipientId))->authorize('view', $post);
+                    }
+                }
             }
 
             $message = Message::query()->create([

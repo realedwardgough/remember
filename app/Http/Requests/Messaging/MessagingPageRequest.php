@@ -17,7 +17,7 @@ class MessagingPageRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['cursor' => ['bail', 'nullable', 'string', 'max:1024', function (string $attribute, mixed $value, Closure $fail): void {
+        return ['groups_only' => ['sometimes', 'boolean'], 'cursor' => ['bail', 'nullable', 'string', 'max:1024', function (string $attribute, mixed $value, Closure $fail): void {
             $decoded = json_decode(base64_decode(strtr($value, '-_', '+/'), true) ?: '', true);
             $rules = [
                 'id' => ['required', 'integer', 'min:1'],

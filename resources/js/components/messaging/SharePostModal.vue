@@ -14,7 +14,42 @@
                 {{ post.title }}
             </p>
         </div>
-        <ContactPicker v-if="!selected" select-only @select="selectRecipient" />
+        <div v-if="!selected" class="grid gap-4">
+            <div class="flex gap-2" aria-label="Share destination">
+                <button
+                    type="button"
+                    class="type-chip"
+                    :class="
+                        targetKind === 'person'
+                            ? 'bg-primary text-white'
+                            : 'bg-lilac text-primary'
+                    "
+                    :aria-pressed="targetKind === 'person'"
+                    @click="targetKind = 'person'"
+                >
+                    Person
+                </button>
+                <button
+                    type="button"
+                    class="type-chip"
+                    :class="
+                        targetKind === 'group'
+                            ? 'bg-primary text-white'
+                            : 'bg-lilac text-primary'
+                    "
+                    :aria-pressed="targetKind === 'group'"
+                    @click="targetKind = 'group'"
+                >
+                    Group
+                </button>
+            </div>
+            <ContactPicker
+                v-if="targetKind === 'person'"
+                select-only
+                @select="selectRecipient"
+            />
+            <GroupPicker v-else @select="selectGroup" />
+        </div>
         <form v-else class="grid gap-4" @submit.prevent="send">
             <div class="flex items-center justify-between gap-3">
                 <p class="min-w-0 text-sm">
@@ -26,7 +61,7 @@
                     :disabled="processing || attempt !== null"
                     @click="selected = null"
                 >
-                    Choose someone else
+                    Choose another destination
                 </button>
             </div>
             <label class="field-label"
@@ -72,7 +107,9 @@ import { router } from '@inertiajs/vue3';
 import { Send } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ContactPicker from '@/components/messaging/ContactPicker.vue';
+import GroupPicker from '@/components/messaging/GroupPicker.vue';
 import Modal from '@/components/Modal.vue';
+import { conversationName } from '@/lib/conversations';
 import {
     MessagingRequestError,
     messageError,
@@ -81,21 +118,38 @@ import {
 import { show as showConversation } from '@/routes/messages';
 import { sharePost } from '@/routes/messaging';
 import type { TimelinePost } from '@/types';
-import type { DirectMessage, MessagingContact } from '@/types/messaging';
+import type {
+    DirectConversation,
+    DirectMessage,
+    MessagingContact,
+} from '@/types/messaging';
 const props = defineProps<{ post: TimelinePost }>();
 const emit = defineEmits<{ close: [] }>();
-const selected = ref<MessagingContact | null>(null);
+const targetKind = ref<'person' | 'group'>('person');
+const selected = ref<{
+    name: string;
+    recipient_id?: number;
+    conversation_id?: number;
+} | null>(null);
 const note = ref('');
 const processing = ref(false);
 const error = ref('');
 const tooLong = computed(() => [...note.value].length > 10000);
 const attempt = ref<{
-    recipient_id: number;
+    recipient_id?: number;
+    conversation_id?: number;
     body: string;
     client_request_id: string;
 } | null>(null);
 function selectRecipient(contact: MessagingContact) {
-    selected.value = contact;
+    selected.value = { name: contact.name, recipient_id: contact.id };
+    error.value = '';
+}
+function selectGroup(conversation: DirectConversation) {
+    selected.value = {
+        name: conversationName(conversation),
+        conversation_id: conversation.id,
+    };
     error.value = '';
 }
 async function send() {
@@ -104,7 +158,9 @@ async function send() {
     }
 
     attempt.value ??= {
-        recipient_id: selected.value.id,
+        ...(selected.value.conversation_id
+            ? { conversation_id: selected.value.conversation_id }
+            : { recipient_id: selected.value.recipient_id }),
         body: note.value.trim(),
         client_request_id: crypto.randomUUID(),
     };

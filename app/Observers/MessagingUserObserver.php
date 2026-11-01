@@ -25,7 +25,7 @@ class MessagingUserObserver
             return;
         }
 
-        $conversations = Conversation::query()->where('first_participant_id', $id)->orWhere('second_participant_id', $id)->pluck('id');
+        $conversations = Conversation::query()->whereHas('memberships', fn ($query) => $query->where('participant_id', $id))->pluck('id');
         foreach ($conversations as $conversationId) {
             app(MessagingUpdates::class)->dispatch($conversationId);
         }

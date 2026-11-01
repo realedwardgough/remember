@@ -20,16 +20,16 @@ class MessagingChanged implements ShouldBroadcast, ShouldDispatchAfterCommit
 
     public function broadcastOn(): array
     {
-        $conversation = Conversation::query()->with(['firstParticipant', 'secondParticipant'])->find($this->conversationId);
+        $conversation = Conversation::query()->with('participants')->find($this->conversationId);
         if ($conversation === null) {
             return [];
         }
 
-        $users = collect([$conversation->firstParticipant->user_id, $conversation->secondParticipant->user_id])->filter();
+        $users = $conversation->participants->pluck('user_id')->filter();
         $channels = $users->filter(fn (int $id): bool => $this->onlyUserId === null || $id === $this->onlyUserId)
             ->map(fn (int $id): PresenceChannel => new PresenceChannel('messaging.users.'.$id))->values()->all();
 
-        if ($this->onlyUserId === null && $users->count() === 2) {
+        if ($this->onlyUserId === null && $users->count() >= 2) {
             $channels[] = new PresenceChannel('messaging.conversations.'.$conversation->id);
         }
 

@@ -26,6 +26,12 @@
                 <button
                     type="button"
                     :disabled="starting"
+                    :aria-pressed="
+                        selectedIds
+                            ? selectedIds.includes(contact.id)
+                            : undefined
+                    "
+                    :class="{ 'bg-lilac': selectedIds?.includes(contact.id) }"
                     class="flex min-h-16 w-full items-center gap-3 rounded-xl p-3 text-left hover:bg-lilac"
                     @click="start(contact)"
                 >
@@ -42,7 +48,13 @@
                             >@{{ contact.username }}</span
                         ></span
                     >
+                    <Check
+                        v-if="selectedIds?.includes(contact.id)"
+                        :size="18"
+                        class="ml-auto shrink-0 text-primary"
+                    />
                     <ArrowRight
+                        v-else
                         :size="18"
                         class="ml-auto shrink-0 text-stone-400"
                     />
@@ -71,7 +83,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ArrowRight } from 'lucide-vue-next';
+import { ArrowRight, Check } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { messageError, messagingRequest } from '@/lib/messaging';
 import { contacts as contactsRoute, store } from '@/routes/messaging';
@@ -80,7 +92,7 @@ import type {
     DirectConversation,
     MessagingContact,
 } from '@/types/messaging';
-const props = defineProps<{ selectOnly?: boolean }>();
+const props = defineProps<{ selectOnly?: boolean; selectedIds?: number[] }>();
 const emit = defineEmits<{
     open: [id: number];
     select: [contact: MessagingContact];

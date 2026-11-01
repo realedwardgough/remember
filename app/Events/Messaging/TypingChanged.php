@@ -16,8 +16,8 @@ class TypingChanged implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        $conversation = Conversation::query()->with(['firstParticipant', 'secondParticipant'])->find($this->conversationId);
-        if ($conversation === null || $conversation->firstParticipant->user_id === null || $conversation->secondParticipant->user_id === null) {
+        $conversation = Conversation::query()->with('participants')->find($this->conversationId);
+        if ($conversation === null || $conversation->participants->whereNotNull('user_id')->count() < 2) {
             return [];
         }
 

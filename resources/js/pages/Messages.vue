@@ -145,13 +145,14 @@
                                     <span
                                         class="flex size-11 shrink-0 items-center justify-center rounded-full bg-mint font-semibold"
                                         aria-hidden="true"
-                                        >{{
-                                            recipient(conversation)?.deleted
-                                                ? '?'
-                                                : recipient(
-                                                      conversation,
-                                                  )?.name.slice(0, 1)
-                                        }}</span
+                                        ><Users
+                                            v-if="conversation.is_group"
+                                            :size="22"
+                                        /><template v-else>{{
+                                            conversationName(
+                                                conversation,
+                                            ).slice(0, 1)
+                                        }}</template></span
                                     >
                                     <span class="min-w-0 flex-1">
                                         <span
@@ -159,8 +160,9 @@
                                             ><span
                                                 class="truncate text-sm font-semibold"
                                                 >{{
-                                                    recipient(conversation)
-                                                        ?.name
+                                                    conversationName(
+                                                        conversation,
+                                                    )
                                                 }}</span
                                             ><time
                                                 :datetime="
@@ -245,7 +247,7 @@
             title="Who shall we say hello to?"
             eyebrow="New message"
             @close="activeModal = null"
-            ><ContactPicker
+            ><NewConversationPicker
                 v-if="activeModal === 'contact'"
                 @open="openConversation"
         /></Modal>
@@ -268,10 +270,10 @@
 </template>
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { MessageCircle, Plus, RefreshCw } from 'lucide-vue-next';
+import { MessageCircle, Plus, RefreshCw, Users } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue';
-import ContactPicker from '@/components/messaging/ContactPicker.vue';
 import ConversationThread from '@/components/messaging/ConversationThread.vue';
+import NewConversationPicker from '@/components/messaging/NewConversationPicker.vue';
 import Modal from '@/components/Modal.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
@@ -282,6 +284,7 @@ import {
     messageDraftsKey,
 } from '@/composables/useMessageDrafts';
 import BaseLayout from '@/layouts/BaseLayout.vue';
+import { conversationName } from '@/lib/conversations';
 import {
     conversationDate,
     messageError,
@@ -336,11 +339,6 @@ const stopUpdates = onMessagingUpdate(() => {
     void loadInbox();
 });
 const controller = new AbortController();
-function recipient(conversation: DirectConversation) {
-    return conversation.participants.find(
-        (participant) => !participant.is_self,
-    );
-}
 function preview(conversation: DirectConversation) {
     const message = conversation.latest_message;
 

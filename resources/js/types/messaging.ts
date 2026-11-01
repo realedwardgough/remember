@@ -47,6 +47,12 @@ export type DirectMessage = {
 
 export type DirectConversation = {
     id: number;
+    is_group: boolean;
+    name: string | null;
+    read_receipts: {
+        participant_id: number;
+        last_read_message_id: number | null;
+    }[];
     participants: MessagingParticipant[];
     can_send: boolean;
     recipient_last_read_message_id: number | null;

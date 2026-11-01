@@ -17,7 +17,6 @@ class ConversationPolicy
     public function send(User $user, Conversation $conversation): bool
     {
         return $this->view($user, $conversation)
-            && $conversation->firstParticipant()->whereHas('user')->exists()
-            && $conversation->secondParticipant()->whereHas('user')->exists();
+            && $conversation->canSendMessages();
     }
 }

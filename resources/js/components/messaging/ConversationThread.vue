@@ -14,19 +14,32 @@
             <span
                 class="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint font-semibold"
                 aria-hidden="true"
-                >{{
-                    other?.deleted ? '?' : other?.name.slice(0, 1) || '…'
-                }}</span
+                ><Users v-if="conversation?.is_group" :size="22" /><template
+                    v-else
+                    >{{
+                        other?.deleted ? '?' : other?.name.slice(0, 1) || '…'
+                    }}</template
+                ></span
             >
             <div class="min-w-0 flex-1">
                 <h2 class="truncate font-semibold">
-                    {{ other?.name || 'Conversation' }}
-                </h2>
-                <p class="text-xs text-stone-500">
                     {{
-                        other?.deleted
-                            ? 'Conversation history'
-                            : 'Just between you two'
+                        conversation
+                            ? conversationName(conversation)
+                            : 'Conversation'
+                    }}
+                </h2>
+                <p class="truncate text-xs text-stone-500">
+                    {{
+                        conversation?.is_group
+                            ? conversation.participants
+                                  .map((person) =>
+                                      person.is_self ? 'You' : person.name,
+                                  )
+                                  .join(', ')
+                            : other?.deleted
+                              ? 'Conversation history'
+                              : 'Just between you two'
                     }}
                 </p>
             </div>
@@ -41,6 +54,25 @@
             </button>
         </header>
 
+        <details
+            v-if="conversation?.is_group"
+            class="shrink-0 border-b px-4 py-2 text-xs text-stone-600"
+        >
+            <summary class="cursor-pointer">
+                {{ conversation.participants.length }} group members
+            </summary>
+            <ul
+                class="mt-2 grid max-h-32 gap-2 overflow-y-auto"
+                aria-label="Group members"
+            >
+                <li
+                    v-for="person in conversation.participants"
+                    :key="person.id"
+                >
+                    {{ person.name }}{{ person.is_self ? ' (you)' : '' }}
+                </li>
+            </ul>
+        </details>
         <p
             v-if="error"
             class="m-3 rounded-xl bg-blush p-3 text-sm text-red-800"
@@ -84,8 +116,11 @@
                 <MessageCircle class="mb-3 text-primary" :size="30" />
                 <p class="story-font text-xl">Start with a little hello</p>
                 <p class="mt-2 text-sm text-stone-500">
-                    Your messages stay between you and
-                    {{ other?.name || 'your family member' }}.
+                    {{
+                        conversation?.is_group
+                            ? `Messages here are shared with everyone in ${conversationName(conversation)}.`
+                            : `Your messages stay between you and ${other?.name || 'your family member'}.`
+                    }}
                 </p>
             </div>
             <ol class="space-y-4" aria-label="Messages">
@@ -153,13 +188,7 @@
                                 >{{ messageTime(message.created_at)
                                 }}<template v-if="message.sender.is_self">
                                     ·
-                                    {{
-                                        message.id <=
-                                        (conversation?.recipient_last_read_message_id ??
-                                            0)
-                                            ? 'Seen'
-                                            : 'Sent'
-                                    }}
+                                    {{ messageReceipt(message, conversation) }}
                                 </template></time
                             >
                         </div>
@@ -233,7 +262,11 @@
             v-if="conversation && !conversation.can_send"
             class="border-t bg-canvas px-4 py-5 text-sm text-stone-600"
         >
-            This account has been deleted. You can still read your conversation.
+            {{
+                conversation?.is_group
+                    ? 'There are no other active members. You can still read the group history.'
+                    : 'This account has been deleted. You can still read your conversation.'
+            }}
         </p>
         <div v-if="hasNewMessages" class="border-t bg-lilac p-2 text-center">
             <button
@@ -267,7 +300,7 @@
 </template>
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, MessageCircle, RefreshCw } from 'lucide-vue-next';
+import { ArrowLeft, MessageCircle, RefreshCw, Users } from 'lucide-vue-next';
 import {
     computed,
     inject,
@@ -283,6 +316,11 @@ import MessagePhoto from '@/components/messaging/MessagePhoto.vue';
 import PhotoPreview from '@/components/messaging/PhotoPreview.vue';
 import SharedPostCard from '@/components/messaging/SharedPostCard.vue';
 import { messageDraftsKey } from '@/composables/useMessageDrafts';
+import {
+    conversationName,
+    messageReceipt,
+    typingLabel,
+} from '@/lib/conversations';
 import {
     MessagingRequestError,
     messageError,
@@ -341,13 +379,24 @@ const controller = new AbortController();
 const hasNewMessages = ref(false);
 const typingPeers = reactive<Record<string, number>>({});
 const typingClock = ref(Date.now());
-const typingText = computed(() =>
-    Object.values(typingPeers).some((expiry) => expiry > typingClock.value) &&
-    other.value &&
-    !other.value.deleted
-        ? `${other.value.name} is typing…`
-        : '',
-);
+const typingText = computed(() => {
+    const activeIds = new Set(
+        Object.entries(typingPeers)
+            .filter(([, expiry]) => expiry > typingClock.value)
+            .map(([key]) => Number(key.split('.')[0])),
+    );
+    const names =
+        conversation.value?.participants
+            .filter(
+                (person) =>
+                    !person.is_self &&
+                    !person.deleted &&
+                    activeIds.has(person.id),
+            )
+            .map((person) => person.name) ?? [];
+
+    return typingLabel(names);
+});
 const connectionText = computed(
     () =>
         ({
@@ -533,6 +582,17 @@ function drainSync() {
 function updateConversation(value: DirectConversation) {
     conversation.value = {
         ...value,
+        read_receipts: value.read_receipts.map((receipt) => ({
+            ...receipt,
+            last_read_message_id:
+                Math.max(
+                    receipt.last_read_message_id ?? 0,
+                    conversation.value?.read_receipts.find(
+                        (previous) =>
+                            previous.participant_id === receipt.participant_id,
+                    )?.last_read_message_id ?? 0,
+                ) || null,
+        })),
         recipient_last_read_message_id:
             Math.max(
                 conversation.value?.recipient_last_read_message_id ?? 0,

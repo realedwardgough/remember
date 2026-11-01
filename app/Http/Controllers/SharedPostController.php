@@ -17,7 +17,7 @@ class SharedPostController extends Controller
     {
         Gate::authorize('view', $conversation);
         abort_unless($message->conversation_id === $conversation->id, 404);
-        $message->load(['sharedPost.post', 'conversation.firstParticipant.user', 'conversation.secondParticipant.user']);
+        $message->load(['sharedPost.post', 'conversation.participants.user']);
         $shared = $posts->forMessage($message, $request->user());
         abort_unless(($shared['status'] ?? null) === 'available', 404);
 

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\Messaging\MarkConversationRead;
 use App\Actions\Messaging\SendMessage;
 use App\Actions\Messaging\StartConversation;
+use App\Actions\Messaging\StartGroupConversation;
 use App\Http\Requests\Messaging\ReadConversationRequest;
 use App\Http\Requests\Messaging\MessagingPageRequest;
 use App\Http\Requests\Messaging\SendMessageRequest;
@@ -75,7 +76,8 @@ class MessagingController extends Controller
     {
         $participantId = MessagingParticipant::query()->where('user_id', $request->user()->id)->value('id');
         $conversations = Conversation::query()->forUser($request->user())
-            ->with(['memberships', 'firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post'])
+            ->when($request->boolean('groups_only'), fn ($query) => $query->where('is_group', true))
+            ->with(['participants.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post'])
             ->withCount(['messages as unread_count' => function (Builder $messages) use ($participantId): void {
                 $messages->where('sender_participant_id', '!=', $participantId)
                     ->whereRaw('messages.id > COALESCE((SELECT last_read_message_id FROM conversation_memberships WHERE conversation_memberships.conversation_id = conversations.id AND participant_id = ?), 0)', [$participantId]);
@@ -89,10 +91,12 @@ class MessagingController extends Controller
         ]);
     }
 
-    public function store(StartConversationRequest $request, StartConversation $start): JsonResponse
+    public function store(StartConversationRequest $request, StartConversation $start, StartGroupConversation $groups): JsonResponse
     {
-        $conversation = $start->handle($request->user(), $request->integer('recipient_id'));
-        $conversation->load(['memberships', 'firstParticipant.user', 'secondParticipant.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post']);
+        $conversation = $request->has('recipient_ids')
+            ? $groups->handle($request->user(), $request->validated('name'), $request->validated('recipient_ids'), $request->validated('client_request_id'))
+            : $start->handle($request->user(), $request->integer('recipient_id'));
+        $conversation->load(['participants.user', 'latestMessage.sender.user', 'latestMessage.attachments', 'latestMessage.sharedPost.post']);
 
         return (new ConversationResource($conversation))->response()->setStatusCode($conversation->wasRecentlyCreated ? 201 : 200);
     }
@@ -107,13 +111,13 @@ class MessagingController extends Controller
 
         $after = $request->integer('after_id');
         $before = $request->integer('before_id');
-        $query = $conversation->messages()->with(['sender.user', 'attachments', 'sharedPost.post', 'conversation.firstParticipant.user', 'conversation.secondParticipant.user'])
+        $query = $conversation->messages()->with(['sender.user', 'attachments', 'sharedPost.post', 'conversation.participants.user'])
             ->when($before, fn ($query) => $query->where('id', '<', $before))
             ->when($after, fn ($query) => $query->where('id', '>', $after));
         $messages = ($after ? $query->orderBy('id') : $query->orderByDesc('id'))->limit(51)->get();
         $hasMore = $messages->count() > 50;
         $messages = $messages->take(50)->sortBy('id')->values();
-        $conversation->load(['memberships', 'firstParticipant.user', 'secondParticipant.user']);
+        $conversation->load(['participants.user']);
         $lastId = $messages->last()?->id;
 
         // Return a receipt only for a message actually included in this response.
@@ -131,7 +135,7 @@ class MessagingController extends Controller
     {
         Gate::authorize('view', $conversation);
         abort_unless($message->conversation_id === $conversation->id, 404);
-        $message->load(['sender.user', 'attachments', 'sharedPost.post', 'conversation.firstParticipant.user', 'conversation.secondParticipant.user']);
+        $message->load(['sender.user', 'attachments', 'sharedPost.post', 'conversation.participants.user']);
 
         return (new MessageResource($message))->response();
     }
@@ -146,7 +150,7 @@ class MessagingController extends Controller
             $request->validated('attachment_ids') ?? [],
             $request->validated('shared_post_id') !== null ? (int) $request->validated('shared_post_id') : null,
         );
-        $message->load(['sender.user', 'attachments', 'sharedPost.post', 'conversation.firstParticipant.user', 'conversation.secondParticipant.user']);
+        $message->load(['sender.user', 'attachments', 'sharedPost.post', 'conversation.participants.user']);
 
         return (new MessageResource($message))->response()->setStatusCode($message->wasRecentlyCreated ? 201 : 200);
     }

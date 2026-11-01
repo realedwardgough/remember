@@ -23,9 +23,9 @@ class SharedPostPresenter
             return $unavailable;
         }
         $conversation = $message->conversation;
-        foreach ([$conversation->firstParticipant->user, $conversation->secondParticipant->user] as $participant) {
+        foreach ($conversation->participants as $member) {
             // Deleted accounts cannot read anything; history remains useful to surviving authorized members.
-            if ($participant !== null && ! Gate::forUser($participant)->allows('view', $post)) {
+            if ($member->user !== null && ! Gate::forUser($member->user)->allows('view', $post)) {
                 return $unavailable;
             }
         }

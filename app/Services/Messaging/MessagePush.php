@@ -19,16 +19,19 @@ class MessagePush
         if (! app(PushSettings::class)->available()) {
             return;
         }
-        $recipient = $message->conversation->memberships()->where('participant_id', '!=', $message->sender_participant_id)
-            ->with('participant.user')->first()?->participant;
-        if ($recipient?->user_id === null || ! $recipient->user?->wantsMessageAlerts()) {
-            return;
-        }
-        foreach (PushSubscription::query()->where('user_id', $recipient->user_id)->get() as $device) {
-            $delivery = MessagePushDelivery::query()->firstOrCreate([
-                'message_id' => $message->id, 'push_subscription_id' => $device->id,
-            ], ['next_attempt_at' => now()->addSeconds(5), 'expires_at' => now()->addMinutes(15)]);
-            DB::afterCommit(fn () => $this->enqueue($delivery->id));
+        $recipients = $message->conversation->memberships()->where('participant_id', '!=', $message->sender_participant_id)
+            ->with('participant.user')->get();
+        foreach ($recipients as $membership) {
+            $recipient = $membership->participant;
+            if ($recipient?->user_id === null || ! $recipient->user?->wantsMessageAlerts()) {
+                continue;
+            }
+            foreach (PushSubscription::query()->where('user_id', $recipient->user_id)->get() as $device) {
+                $delivery = MessagePushDelivery::query()->firstOrCreate([
+                    'message_id' => $message->id, 'push_subscription_id' => $device->id,
+                ], ['next_attempt_at' => now()->addSeconds(5), 'expires_at' => now()->addMinutes(15)]);
+                DB::afterCommit(fn () => $this->enqueue($delivery->id));
+            }
         }
     }
 

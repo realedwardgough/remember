@@ -17,7 +17,8 @@ class SharePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'recipient_id' => ['required', 'integer', Rule::exists('users', 'id'), Rule::notIn([$this->user()->id])],
+            'recipient_id' => ['required_without:conversation_id', 'prohibits:conversation_id', 'integer', Rule::exists('users', 'id'), Rule::notIn([$this->user()->id])],
+            'conversation_id' => ['required_without:recipient_id', 'prohibits:recipient_id', 'integer', 'min:1'],
             'body' => ['nullable', 'string', 'max:10000'],
             'client_request_id' => ['required', 'uuid'],
         ];

@@ -20,7 +20,7 @@ class PushPreview
                 : ($message->sharedPost()->exists() ? 'Shared a timeline post' : 'Sent you a message');
         }
         return [
-            'title' => $sender.' · Remember', 'body' => $body, 'kind' => 'message',
+            'title' => $message->conversation->is_group ? $sender.' · '.$this->text($message->conversation->name, 80) : $sender.' · Remember', 'body' => $body, 'kind' => 'message',
             'url' => '/messages/'.$message->conversation_id, 'tag' => 'remember-conversation-'.$message->conversation_id,
         ];
     }

@@ -36,12 +36,13 @@ class TypingState
 
     public function forOtherParticipant(Conversation $conversation, int $participantId): array
     {
-        $other = $conversation->first_participant_id === $participantId ? $conversation->second_participant_id : $conversation->first_participant_id;
         $events = [];
-        foreach (Cache::get($this->key($conversation->id, $other), []) as $sourceId => $expiry) {
-            $remaining = $expiry - now()->getTimestampMs();
-            if ($remaining > 0) {
-                $events[] = ['conversation_id' => $conversation->id, 'participant_id' => $other, 'source_id' => $sourceId, 'typing' => true, 'expires_in_ms' => min(self::LIFETIME_MS, $remaining)];
+        foreach ($conversation->participants()->where('messaging_participants.id', '!=', $participantId)->whereNotNull('user_id')->pluck('messaging_participants.id') as $other) {
+            foreach (Cache::get($this->key($conversation->id, $other), []) as $sourceId => $expiry) {
+                $remaining = $expiry - now()->getTimestampMs();
+                if ($remaining > 0) {
+                    $events[] = ['conversation_id' => $conversation->id, 'participant_id' => $other, 'source_id' => $sourceId, 'typing' => true, 'expires_in_ms' => min(self::LIFETIME_MS, $remaining)];
+                }
             }
         }
         return $events;
