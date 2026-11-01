@@ -20,4 +20,12 @@ class UploadMessageImageRequest extends FormRequest
             'client_request_id' => ['required', 'uuid'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'image.max' => 'This photo exceeds the 10 MB upload limit. Please choose it again so it can be resized, or use a smaller copy.',
+            'image.uploaded' => 'The server could not accept this photo. Its upload limit may be lower than the photo size. Please try a smaller copy.',
+        ];
+    }
 }

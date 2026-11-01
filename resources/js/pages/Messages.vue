@@ -283,6 +283,7 @@ import {
     createMessageDrafts,
     messageDraftsKey,
 } from '@/composables/useMessageDrafts';
+import { useMessagesViewport } from '@/composables/useMessagesViewport';
 import BaseLayout from '@/layouts/BaseLayout.vue';
 import { conversationName } from '@/lib/conversations';
 import {
@@ -314,20 +315,7 @@ const inboxCursor = ref<string | null>(null);
 const inboxLoading = ref(false);
 const inboxError = ref('');
 provide(messageDraftsKey, createMessageDrafts());
-const viewportHeight = ref<number | null>(null);
-const viewportOffset = ref(0);
-const workspaceStyle = computed(() =>
-    viewportHeight.value
-        ? {
-              '--messages-viewport': `${viewportHeight.value}px`,
-              '--messages-offset': `${viewportOffset.value}px`,
-          }
-        : {},
-);
-const mobileNavigationStyle = computed(() => ({
-    top: `calc(${viewportOffset.value}px + ${viewportHeight.value ? `${viewportHeight.value}px` : '100dvh'} - 4.5rem - 1px - env(safe-area-inset-bottom))`,
-    bottom: 'auto',
-}));
+const { workspaceStyle, mobileNavigationStyle } = useMessagesViewport();
 const sortedInbox = computed(() =>
     [...inbox.value].sort(
         (a, b) => b.updated_at.localeCompare(a.updated_at) || b.id - a.id,
@@ -427,25 +415,27 @@ function openConversation(id: number) {
     router.visit(showConversation.url(id), { preserveState: true });
     void loadInbox();
 }
-function resizeViewport() {
-    viewportHeight.value = window.visualViewport?.height ?? null;
-    viewportOffset.value = window.visualViewport?.offsetTop ?? 0;
-}
 onMounted(() => {
     void loadInbox();
-    resizeViewport();
-    window.visualViewport?.addEventListener('resize', resizeViewport);
-    window.visualViewport?.addEventListener('scroll', resizeViewport);
 });
 onBeforeUnmount(() => {
     stopUpdates();
     alive = false;
     controller.abort();
-    window.visualViewport?.removeEventListener('resize', resizeViewport);
-    window.visualViewport?.removeEventListener('scroll', resizeViewport);
 });
 </script>
 <style scoped>
+:global(html.messages-mobile-shell),
+:global(html.messages-mobile-shell body) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior-y: none;
+}
+:global(html.messages-mobile-shell body) {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+}
 .messages-workspace {
     height: calc(
         var(--messages-viewport, 100dvh) - 13rem - env(safe-area-inset-bottom)
@@ -463,6 +453,7 @@ onBeforeUnmount(() => {
                 env(safe-area-inset-bottom)
         );
         min-height: 0;
+        overflow: hidden;
         padding-top: env(safe-area-inset-top);
         background: var(--color-canvas);
     }

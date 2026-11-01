@@ -5,7 +5,7 @@
                 v-for="(file, index) in photos"
                 :key="index"
                 :file="file"
-                removable
+                :removable="!preparingPhotos"
                 @remove="removePhoto(index)"
             />
         </div>
@@ -19,14 +19,14 @@
                 accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
                 multiple
                 aria-label="Choose message photos"
-                :disabled="disabled || !imagesEnabled"
+                :disabled="disabled || preparingPhotos || !imagesEnabled"
                 @change="choosePhotos"
             />
             <button
                 v-if="imagesEnabled"
                 type="button"
                 class="flex size-11 shrink-0 items-center justify-center rounded-xl text-stone-500 hover:bg-lilac"
-                :disabled="disabled"
+                :disabled="disabled || preparingPhotos"
                 aria-label="Add photos"
                 @click="photoInput?.click()"
             >
@@ -56,6 +56,7 @@
                 type="submit"
                 :disabled="
                     disabled ||
+                    preparingPhotos ||
                     (!modelValue.trim() && !photos.length) ||
                     tooLong
                 "
@@ -65,6 +66,13 @@
                 <Send :size="19" />
             </button>
         </div>
+        <p
+            v-if="preparingPhotos"
+            role="status"
+            class="mt-2 text-xs text-stone-500"
+        >
+            Preparing photos for upload…
+        </p>
         <p v-if="photoError" role="alert" class="mt-2 text-sm text-red-700">
             {{ photoError }}
         </p>
@@ -74,7 +82,7 @@
         >
             Photos are removed {{ retentionHours }}
             {{ retentionHours === 1 ? 'hour' : 'hours' }} after upload. Up to 4
-            photos, 10 MB each.
+            photos. Photos are resized before uploading.
         </p>
         <p
             v-if="tooLong"
@@ -85,22 +93,24 @@
             Messages can contain up to 10,000 characters.
         </p>
         <p v-else class="mt-2 text-xs text-stone-500">
-            A little note, just between you two.
+            A little note for your conversation.
         </p>
     </form>
 </template>
 <script setup lang="ts">
 import { useTextareaAutosize } from '@vueuse/core';
 import { ImagePlus, Send } from 'lucide-vue-next';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import EmojiPicker from '@/components/messaging/EmojiPicker.vue';
 import PhotoPreview from '@/components/messaging/PhotoPreview.vue';
+import { prepareMessagePhoto } from '@/lib/message-photos';
 const props = defineProps<{
     modelValue: string;
     disabled?: boolean;
     photos: File[];
     imagesEnabled: boolean;
     retentionHours: number | null;
+    maxUploadBytes?: number;
 }>();
 const emit = defineEmits<{
     'update:modelValue': [value: string];
@@ -113,6 +123,11 @@ const { textarea: input } = useTextareaAutosize({
 });
 const photoInput = ref<HTMLInputElement | null>(null);
 const photoError = ref('');
+const preparingPhotos = ref(false);
+let alive = true;
+onBeforeUnmount(() => {
+    alive = false;
+});
 function removePhoto(index: number) {
     emit(
         'update:photos',
@@ -120,10 +135,14 @@ function removePhoto(index: number) {
     );
     photoError.value = '';
 }
-function choosePhotos(event: Event) {
+async function choosePhotos(event: Event) {
     const target = event.target as HTMLInputElement;
     const selected = [...(target.files ?? [])];
     target.value = '';
+
+    if (preparingPhotos.value || props.disabled || !selected.length) {
+        return;
+    }
 
     if (props.photos.length + selected.length > 4) {
         photoError.value = 'Choose up to four photos per message.';
@@ -131,14 +150,31 @@ function choosePhotos(event: Event) {
         return;
     }
 
-    if (selected.some((file) => file.size > 10 * 1024 * 1024)) {
-        photoError.value = 'Each photo must be 10 MB or smaller.';
-
-        return;
-    }
-
     photoError.value = '';
-    emit('update:photos', [...props.photos, ...selected]);
+    preparingPhotos.value = true;
+
+    try {
+        const prepared: File[] = [];
+
+        for (const file of selected) {
+            prepared.push(
+                await prepareMessagePhoto(file, props.maxUploadBytes),
+            );
+        }
+
+        if (alive) {
+            emit('update:photos', [...props.photos, ...prepared]);
+        }
+    } catch (error) {
+        if (alive) {
+            photoError.value =
+                error instanceof Error
+                    ? error.message
+                    : 'This photo couldn’t be prepared. Please try a smaller copy.';
+        }
+    } finally {
+        preparingPhotos.value = false;
+    }
 }
 const tooLong = computed(() => [...props.modelValue].length > 10000);
 function update(event: Event) {
@@ -147,6 +183,7 @@ function update(event: Event) {
 function submit() {
     if (
         props.disabled ||
+        preparingPhotos.value ||
         (!props.modelValue.trim() && !props.photos.length) ||
         tooLong.value
     ) {

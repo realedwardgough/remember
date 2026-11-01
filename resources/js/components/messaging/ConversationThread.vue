@@ -289,6 +289,7 @@
             v-model="draft.body"
             v-model:photos="draft.photos"
             :images-enabled="page.props.messageImages.enabled"
+            :max-upload-bytes="page.props.messageImages.max_upload_bytes"
             :retention-hours="page.props.messageImages.retention_hours ?? null"
             :disabled="
                 !conversation || loading || messagingConnection === 'expired'

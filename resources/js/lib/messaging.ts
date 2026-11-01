@@ -43,13 +43,15 @@ export async function messagingRequest<T>(
         const message =
             response.status === 401 || response.status === 419
                 ? 'Your session has expired. Reload this page to sign in again.'
-                : response.status === 429
-                  ? 'Please wait a moment before trying again.'
-                  : response.status === 403
-                    ? 'This conversation is no longer available for this action.'
-                    : typeof validation === 'string'
-                      ? validation
-                      : 'We couldn’t complete that request. Please try again.';
+                : response.status === 413
+                  ? 'The server rejected this photo because it exceeds its upload limit. Please try a smaller photo.'
+                  : response.status === 429
+                    ? 'Please wait a moment before trying again.'
+                    : response.status === 403
+                      ? 'This conversation is no longer available for this action.'
+                      : typeof validation === 'string'
+                        ? validation
+                        : 'We couldn’t complete that request. Please try again.';
 
         throw new MessagingRequestError(
             message,
