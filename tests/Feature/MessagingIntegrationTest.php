@@ -10,7 +10,6 @@ use App\Models\Conversation;
 use App\Models\Media;
 use App\Models\MessageAttachment;
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\Post;
 use App\Models\PushSubscription;
 use App\Models\User;
@@ -51,7 +50,7 @@ class MessagingIntegrationTest extends TestCase
         $this->sender = User::factory()->create(['name' => 'Original Sender']);
         $this->recipient = User::factory()->create();
         $this->conversation = app(StartConversation::class)->handle($this->sender, $this->recipient->id);
-        NotificationPreference::query()->create(['user_id' => $this->recipient->id, 'message_alerts' => true]);
+        $this->recipient->settings()->set('notifications.message_alerts', true);
         PushSubscription::query()->create([
             'user_id' => $this->recipient->id, 'device_hash' => hash('sha256', 'integration-device'),
             'endpoint_hash' => hash('sha256', 'integration-endpoint'), 'endpoint' => 'https://fcm.googleapis.com/fcm/send/integration',

@@ -58,7 +58,7 @@ class MessagingStatus extends Command
 
         $counts = [];
         try {
-            $tables = ['messaging_participants', 'conversations', 'conversation_memberships', 'messages', 'message_attachments', 'message_post_shares', 'notification_preferences', 'push_subscriptions', 'message_push_deliveries'];
+            $tables = ['messaging_participants', 'conversations', 'conversation_memberships', 'messages', 'message_attachments', 'message_post_shares', config('settings.model.table', 'model_settings'), 'push_subscriptions', 'message_push_deliveries'];
             $missing = array_filter($tables, fn (string $table): bool => ! Schema::hasTable($table));
             if ($missing !== []) {
                 $add('database', 'error', 'Messaging tables are missing; apply the application migrations.');

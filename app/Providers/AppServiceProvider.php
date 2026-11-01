@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         User::observe(MessagingUserObserver::class);
+        User::observe(\App\Observers\UserSettingsObserver::class);
         Post::observe(SharedPostObserver::class);
         Post::observe(\App\Observers\PostNotificationObserver::class);
     }

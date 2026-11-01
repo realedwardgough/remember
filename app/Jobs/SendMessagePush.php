@@ -7,7 +7,6 @@ namespace App\Jobs;
 use App\Models\ConversationMembership;
 use App\Models\Message;
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\Post;
 use App\Services\Messaging\PushPreview;
 use Illuminate\Support\Facades\Gate;
@@ -97,13 +96,13 @@ class SendMessagePush implements ShouldQueue
     {
         $user = User::query()->find($device->user_id);
         return $post !== null && $post->author_id !== null && $user !== null && $post->author_id !== $user->id
-            && NotificationPreference::query()->where('user_id', $user->id)->where('post_alerts', true)->exists()
+            && $user->wantsPostAlerts()
             && Gate::forUser($user)->allows('view', $post);
     }
 
     private function unreadFor(?Message $message, PushSubscription $device): bool
     {
-        if ($message === null || ! NotificationPreference::query()->where('user_id', $device->user_id)->where('message_alerts', true)->exists()) {
+        if ($message === null || ! User::query()->find($device->user_id)?->wantsMessageAlerts()) {
             return false;
         }
         $member = ConversationMembership::query()->where('conversation_id', $message->conversation_id)

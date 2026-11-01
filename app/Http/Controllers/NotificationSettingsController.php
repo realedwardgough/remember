@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\PushSubscription;
 use App\Services\Messaging\PushEndpoint;
 use App\Services\Messaging\PushSettings;
@@ -22,8 +21,8 @@ class NotificationSettingsController extends Controller
         $device = $this->device($request);
         return response()->json([
             ...$settings->publicSettings(),
-            'message_alerts' => NotificationPreference::query()->where('user_id', $request->user()->id)->value('message_alerts') === true,
-            'post_alerts' => NotificationPreference::query()->where('user_id', $request->user()->id)->value('post_alerts') === true,
+            'message_alerts' => $request->user()->wantsMessageAlerts(),
+            'post_alerts' => $request->user()->wantsPostAlerts(),
             'device_enabled' => $device !== null && ($device->expires_at === null || $device->expires_at->isFuture()),
         ]);
     }
@@ -34,7 +33,11 @@ class NotificationSettingsController extends Controller
             'message_alerts' => ['required_without:post_alerts', 'boolean'],
             'post_alerts' => ['required_without:message_alerts', 'boolean'],
         ]);
-        NotificationPreference::query()->updateOrCreate(['user_id' => $request->user()->id], $data);
+        DB::transaction(function () use ($request, $data): void {
+            foreach ($data as $key => $value) {
+                $request->user()->settings()->set('notifications.'.$key, (bool) $value);
+            }
+        });
         return $this->show($request, app(PushSettings::class));
     }
 

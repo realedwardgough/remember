@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Enum\TimelinePostType;
 use App\Jobs\SendMessagePush;
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\Post;
 use App\Models\PushSubscription;
 use App\Models\User;
@@ -38,7 +37,8 @@ class PostNotificationsTest extends TestCase
 
     private function subscribe(User $user, bool $posts = true): PushSubscription
     {
-        NotificationPreference::query()->create(['user_id' => $user->id, 'message_alerts' => false, 'post_alerts' => $posts]);
+        $user->settings()->set('notifications.message_alerts', false);
+        $user->settings()->set('notifications.post_alerts', $posts);
         return PushSubscription::query()->create([
             'user_id' => $user->id, 'device_hash' => hash('sha256', 'device-'.$user->id),
             'endpoint_hash' => hash('sha256', 'endpoint-'.$user->id), 'endpoint' => 'https://fcm.googleapis.com/fcm/send/'.$user->id,
@@ -130,10 +130,10 @@ class PostNotificationsTest extends TestCase
         $device = $this->subscribe($reader);
         Post::factory()->memory()->create();
         $delivery = MessagePushDelivery::query()->sole();
-        NotificationPreference::query()->where('user_id', $reader->id)->update(['post_alerts' => false]);
+        $reader->settings()->set('notifications.post_alerts', false);
         $this->work($delivery, false);
         $this->assertSame('skipped', $delivery->fresh()->state);
-        NotificationPreference::query()->where('user_id', $reader->id)->update(['post_alerts' => true]);
+        $reader->settings()->set('notifications.post_alerts', true);
         Post::factory()->memory()->create();
         $next = MessagePushDelivery::query()->latest('id')->firstOrFail();
         $device->delete();

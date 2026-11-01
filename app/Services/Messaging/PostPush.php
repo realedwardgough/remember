@@ -19,7 +19,7 @@ class PostPush
             return;
         }
         User::query()->where('id', '!=', $post->author_id)
-            ->whereIn('id', \App\Models\NotificationPreference::query()->select('user_id')->where('post_alerts', true))
+            ->whereSettingEnabled('notifications.post_alerts')
             ->chunkById(100, function ($users) use ($post): void {
                 foreach ($users as $user) {
                     if (! Gate::forUser($user)->allows('view', $post)) {

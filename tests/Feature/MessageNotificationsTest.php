@@ -10,7 +10,6 @@ use App\Http\Middleware\BindPushDevice;
 use App\Jobs\SendMessagePush;
 use App\Models\ConversationMembership;
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\Messaging\PushEndpoint;
@@ -58,7 +57,7 @@ class MessageNotificationsTest extends TestCase
     {
         $sender = User::factory()->create();
         $recipient = User::factory()->create();
-        NotificationPreference::query()->create(['user_id' => $recipient->id, 'message_alerts' => true]);
+        $recipient->settings()->set('notifications.message_alerts', true);
         $device = $this->subscribe($recipient);
         $conversation = app(StartConversation::class)->handle($sender, $recipient->id);
         $message = app(SendMessage::class)->handle($sender, $conversation, 'Secret message 🥰', (string) Str::uuid());
@@ -142,7 +141,7 @@ class MessageNotificationsTest extends TestCase
     public function disabling_a_device_keeps_account_preferences_and_other_devices(): void
     {
         $user = User::factory()->create();
-        NotificationPreference::query()->create(['user_id' => $user->id, 'message_alerts' => true]);
+        $user->settings()->set('notifications.message_alerts', true);
         $this->subscribe($user);
         $this->subscribe($user, str_repeat('b', 64), 'second');
         $this->actingAs($user)->withCookie(BindPushDevice::COOKIE, $this->device)->deleteJson(route('notifications.unsubscribe'))
@@ -155,7 +154,7 @@ class MessageNotificationsTest extends TestCase
     {
         $sender = User::factory()->create();
         $recipient = User::factory()->create();
-        NotificationPreference::query()->create(['user_id' => $recipient->id, 'message_alerts' => true]);
+        $recipient->settings()->set('notifications.message_alerts', true);
         $this->subscribe($recipient);
         $conversation = app(StartConversation::class)->handle($sender, $recipient->id);
         DB::beginTransaction();
@@ -210,7 +209,7 @@ class MessageNotificationsTest extends TestCase
         $this->assertSame('skipped', $delivery->fresh()->state);
         $next = app(SendMessage::class)->handle($sender, $message->conversation, 'Next', (string) Str::uuid());
         $pending = MessagePushDelivery::query()->where('message_id', $next->id)->firstOrFail();
-        NotificationPreference::query()->where('user_id', $recipient->id)->update(['message_alerts' => false]);
+        $recipient->settings()->set('notifications.message_alerts', false);
         $this->travel(6)->seconds();
         (new SendMessagePush($pending->id))->handle($transport, app(PushSettings::class));
         $this->assertSame('skipped', $pending->fresh()->state);
@@ -226,7 +225,7 @@ class MessageNotificationsTest extends TestCase
         $conversation = app(StartConversation::class)->handle($sender, $recipient->id);
         app(SendMessage::class)->handle($sender, $conversation, 'No opt in', (string) Str::uuid());
         $this->assertDatabaseCount('message_push_deliveries', 0);
-        NotificationPreference::query()->create(['user_id' => $recipient->id, 'message_alerts' => true]);
+        $recipient->settings()->set('notifications.message_alerts', true);
         app(SendMessage::class)->handle($sender, $conversation, 'Opted in', (string) Str::uuid());
         $this->assertDatabaseCount('message_push_deliveries', 2);
     }
@@ -345,7 +344,7 @@ class MessageNotificationsTest extends TestCase
         $sender = User::factory()->create();
         $recipient = User::factory()->create();
         $this->subscribe($recipient);
-        NotificationPreference::query()->create(['user_id' => $recipient->id, 'message_alerts' => true]);
+        $recipient->settings()->set('notifications.message_alerts', true);
         $conversation = app(StartConversation::class)->handle($sender, $recipient->id);
         Log::spy();
         $originalQueue = Queue::getFacadeRoot();

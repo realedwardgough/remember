@@ -7,7 +7,6 @@ namespace App\Services\Messaging;
 use App\Jobs\SendMessagePush;
 use App\Models\Message;
 use App\Models\MessagePushDelivery;
-use App\Models\NotificationPreference;
 use App\Models\PushSubscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,8 +20,8 @@ class MessagePush
             return;
         }
         $recipient = $message->conversation->memberships()->where('participant_id', '!=', $message->sender_participant_id)
-            ->with('participant')->first()?->participant;
-        if ($recipient?->user_id === null || ! NotificationPreference::query()->where('user_id', $recipient->user_id)->where('message_alerts', true)->exists()) {
+            ->with('participant.user')->first()?->participant;
+        if ($recipient?->user_id === null || ! $recipient->user?->wantsMessageAlerts()) {
             return;
         }
         foreach (PushSubscription::query()->where('user_id', $recipient->user_id)->get() as $device) {

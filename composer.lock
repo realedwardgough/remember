@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4eca9627490cffb73463317464feaaaf",
+    "content-hash": "d2dd9cd4f669925b63210edcc64389d2",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -726,6 +726,78 @@
                 }
             ],
             "time": "2026-10-19T17:53:57+00:00"
+        },
+        {
+            "name": "egough/laravel-settings",
+            "version": "v1.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/realedwardgough/laravel-settings.git",
+                "reference": "a1820b07041302a2f6e5bb908c087d2d6c59051f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/realedwardgough/laravel-settings/zipball/a1820b07041302a2f6e5bb908c087d2d6c59051f",
+                "reference": "a1820b07041302a2f6e5bb908c087d2d6c59051f",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/cache": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/config": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/console": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/database": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/events": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/support": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "illuminate/view": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+                "php": "^8.2 || ^8.3 || ^8.4"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "phpunit/phpunit": "^11.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Flag": "Egough\\LaravelSettings\\Facades\\Flag",
+                        "Settings": "Egough\\LaravelSettings\\Facades\\Settings"
+                    },
+                    "providers": [
+                        "Egough\\LaravelSettings\\SettingsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Egough\\LaravelSettings\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Edward Gough",
+                    "email": "edwardggough@gmail.com"
+                }
+            ],
+            "description": "Database-backed application and model settings for Laravel.",
+            "homepage": "https://github.com/realedwardgough/laravel-settings",
+            "keywords": [
+                "Settings",
+                "configuration",
+                "feature-flags",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/realedwardgough/laravel-settings/issues",
+                "source": "https://github.com/realedwardgough/laravel-settings/tree/v1.4.1"
+            },
+            "time": "2026-10-27T20:06:20+00:00"
         },
         {
             "name": "egulias/email-validator",
