@@ -1,6 +1,6 @@
 <template>
     <aside
-        class="border-b bg-white px-5 py-4 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-5 lg:py-8"
+        class="hidden border-b bg-white px-5 py-4 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-5 lg:py-8"
     >
         <div class="flex items-center justify-between gap-3 lg:mb-9">
             <Link :href="home()" class="min-w-0">
@@ -46,6 +46,13 @@
                     label="Photos"
                     :link="gallery()"
                     :active="isGallery"
+                />
+                <NavigationLink
+                    icon="fa-regular fa-comment"
+                    label="Messages"
+                    :link="messagesIndex()"
+                    :active="isMessages"
+                    :badge="page.props.unreadMessagesCount"
                 />
                 <li>
                     <button
@@ -95,6 +102,7 @@
     </aside>
     <nav
         aria-label="Mobile navigation"
+        :style="mobileNavigationStyle"
         class="fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] backdrop-blur-lg lg:hidden"
     >
         <div class="mx-auto grid h-18 max-w-lg grid-cols-5 items-center px-2">
@@ -116,10 +124,11 @@
                 @activate="emit('openPostForm')"
             />
             <MobileNavigationLink
-                icon="fa-solid fa-images"
-                label="Photos"
-                :link="gallery()"
-                :active="isGallery"
+                icon="fa-regular fa-comment"
+                label="Messages"
+                :link="messagesIndex()"
+                :active="isMessages"
+                :badge="page.props.unreadMessagesCount"
             />
             <MobileNavigationLink
                 icon="fa-regular fa-user"
@@ -134,11 +143,16 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { Plus, Search } from 'lucide-vue-next';
 import { computed } from 'vue';
+import type { CSSProperties } from 'vue';
 import MobileNavigationLink from '@/components/MobileNavigationLink.vue';
 import NavigationLink from '@/components/NavigationLink.vue';
 import { gallery, home } from '@/routes';
+import { index as messagesIndex } from '@/routes/messages';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps, TimelinePostType } from '@/types';
+defineProps<{
+    mobileNavigationStyle?: CSSProperties;
+}>();
 const emit = defineEmits<{ openPostForm: []; openSearch: [] }>();
 const page = usePage<PageProps>();
 const timeline = computed(() => page.props.timeline);
@@ -147,6 +161,7 @@ const tags = computed(() => page.props.tags);
 const postTypes = computed(() => page.props.postTypes);
 const currentPath = computed(() => page.url.split('?')[0]);
 const isGallery = computed(() => currentPath.value === '/gallery');
+const isMessages = computed(() => currentPath.value.startsWith('/messages'));
 const isProfile = computed(
     () =>
         currentPath.value.startsWith('/profile') ||

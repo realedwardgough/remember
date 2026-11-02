@@ -16,11 +16,32 @@ class MediaController extends Controller
     {
         $this->authorizeMedia($request, $media);
 
+        // Recheck access before validating a browser's cached copy. Unchanged
+        // media can then be reused without contacting cloud storage at all.
+        $cached = response('', 200, [
+            'Cache-Control' => 'private, no-cache, max-age=0, must-revalidate',
+        ])->setEtag(hash('sha256', json_encode([
+            $request->user()->id,
+            $media->id,
+            $media->disk,
+            $media->path,
+            $media->size,
+            $media->mime_type,
+            $media->updated_at?->toISOString(),
+        ], JSON_THROW_ON_ERROR)), weak: true);
+        $cached->setLastModified($media->updated_at);
+
+        if ($cached->isNotModified($request)) {
+            return $cached;
+        }
+
         return Storage::disk($media->disk)->response(
             path: $media->path,
             name: $media->original_name,
             headers: [
+                ...$cached->headers->all(),
                 'Content-Type' => $media->mime_type,
+                'Content-Length' => $media->size,
             ],
         );
     }

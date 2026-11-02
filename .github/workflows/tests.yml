@@ -32,6 +32,7 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
+          extensions: curl, mbstring, openssl, gd, pdo_sqlite, bcmath
           coverage: xdebug
 
       - name: Setup Node
@@ -40,7 +41,7 @@ jobs:
           node-version: '22'
 
       - name: Install Node Dependencies
-        run: npm i
+        run: npm ci
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -53,6 +54,9 @@ jobs:
 
       - name: Build Assets
         run: npm run build
+
+      - name: Notification Service Worker Tests
+        run: npm run test:notifications
 
       - name: Tests
         run: php artisan test --compact --coverage --min=50
