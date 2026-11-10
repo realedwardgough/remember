@@ -62,6 +62,13 @@ class PostController extends Controller
             ];
         }
 
+        $videoCount = $post->media->filter(fn (Media $media): bool => $media->isVideo())->count();
+        if ($videoCount > 0) {
+            $toasts[] = ['type' => 'success', 'message' => $videoCount === 1
+                ? '1 video uploaded and queued for processing.'
+                : "{$videoCount} videos uploaded and queued for processing."];
+        }
+
         Inertia::flash('toasts', $toasts);
 
         return redirect()->route('home');

@@ -48,8 +48,15 @@ class StorePostRequest extends FormRequest
             'media' => ['nullable', 'array', 'max:10'],
             'media.*' => [
                 'required',
-                File::types(['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'txt', 'doc', 'docx'])
-                    ->max(10 * 1024),
+                File::types(['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'txt', 'doc', 'docx', 'mp4', 'mov', 'webm', 'm4v'])
+                    ->max(config('video.max_upload_kb')),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value instanceof \Illuminate\Http\UploadedFile
+                        && ! str_starts_with($value->getMimeType() ?? '', 'video/')
+                        && $value->getSize() > 10 * 1024 * 1024) {
+                        $fail('Photos and documents must be 10 MB or smaller.');
+                    }
+                },
             ],
         ];
     }

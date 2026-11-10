@@ -46,7 +46,7 @@
             <section aria-labelledby="photo-label">
                 <div class="mb-2 flex items-center justify-between gap-2">
                     <h3 id="photo-label" class="text-sm font-semibold">
-                        Photos
+                        Photos and videos
                         <span class="font-normal text-stone-400"
                             >(optional)</span
                         >
@@ -59,7 +59,7 @@
                     id="composer-media"
                     ref="mediaInput"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,video/x-m4v"
                     multiple
                     class="sr-only"
                     @change="addPhotos"
@@ -73,7 +73,17 @@
                         :key="photo.url"
                         class="relative aspect-square"
                     >
+                        <video
+                            v-if="photo.file.type.startsWith('video/')"
+                            :src="photo.url"
+                            :aria-label="photo.file.name"
+                            muted
+                            playsinline
+                            preload="metadata"
+                            class="size-full rounded-xl object-cover"
+                        />
                         <img
+                            v-else
                             :src="photo.url"
                             :alt="photo.file.name"
                             class="size-full rounded-xl object-cover"
@@ -96,12 +106,14 @@
                 >
                     <ImagePlus :size="25" />{{
                         photos.length
-                            ? 'Add more photos'
-                            : 'Add photos of this moment'
+                            ? 'Add more photos or videos'
+                            : 'Add photos or videos of this moment'
                     }}
                 </button>
                 <p class="mt-2 text-xs leading-5 text-stone-500">
-                    Up to 10 photos, 10 MB each. JPG, PNG, WebP or GIF.
+                    Up to 10 photos or videos. Photos: 10 MB; videos: 256 MB.
+                    JPG, PNG, WebP, GIF, MP4, MOV, WebM or M4V. Videos are
+                    optimized after upload; only the optimized copy is kept.
                 </p>
                 <p v-if="selectionError" role="alert" class="field-error mt-2">
                     {{ selectionError }}
@@ -175,7 +187,7 @@
         >
             <div v-if="form.progress" class="mb-3" role="status">
                 <p class="mb-1 text-xs text-primary">
-                    Uploading photos… {{ form.progress.percentage ?? 0 }}%
+                    Uploading media… {{ form.progress.percentage ?? 0 }}%
                 </p>
                 <progress
                     :value="form.progress.percentage ?? 0"
@@ -272,21 +284,33 @@ const addPhotos = (event: Event) => {
         }
 
         if (photos.value.length >= 10) {
-            selectionError.value = 'You can add up to 10 photos to one memory.';
+            selectionError.value =
+                'You can add up to 10 photos or videos to one memory.';
             break;
         }
 
         if (
-            !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
-                file.type,
-            )
+            ![
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'image/gif',
+                'video/mp4',
+                'video/quicktime',
+                'video/webm',
+                'video/x-m4v',
+            ].includes(file.type)
         ) {
-            selectionError.value = 'Choose JPG, PNG, WebP or GIF photos.';
+            selectionError.value = 'Choose a supported photo or video.';
             continue;
         }
 
-        if (file.size > 10 * 1024 * 1024) {
-            selectionError.value = 'Each photo must be 10 MB or smaller.';
+        const video = file.type.startsWith('video/');
+
+        if (file.size > (video ? 256 : 10) * 1024 * 1024) {
+            selectionError.value = video
+                ? 'Each video must be 256 MB or smaller.'
+                : 'Each photo must be 10 MB or smaller.';
             continue;
         }
 
@@ -322,19 +346,19 @@ const submit = () => {
         },
         onNetworkError: () => {
             submitError.value =
-                'The connection was interrupted. Your writing and photos are still here. Please try saving again.';
+                'The connection was interrupted. Your writing and media are still here. Please try saving again.';
 
             return false;
         },
         onHttpException: () => {
             submitError.value =
-                'Your memory could not be saved. Your writing and photos are still here. Please try again.';
+                'Your memory could not be saved. Your writing and media are still here. Please try again.';
 
             return false;
         },
         onError: () => {
             submitError.value =
-                'Please check the highlighted fields. Your writing and photos are still here.';
+                'Please check the highlighted fields. Your writing and media are still here.';
         },
     });
 };

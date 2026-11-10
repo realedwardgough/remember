@@ -197,6 +197,51 @@ Verify that the selected media disk can write, read and delete files:
 php artisan media:verify-storage
 ```
 
+### Timeline videos
+
+Photos and videos use the same private `MEDIA_DISK` bucket. Uploaded originals live
+under `posts/{post}/videos/originals/`; verified MP4s live under `posts/{post}/videos/`.
+Keep this bucket private with uniform bucket-level access. Do not apply the temporary
+message-image expiry policy to timeline media. A separate bucket is only needed if
+originals require different access, location, or bucket retention policies.
+
+Install FFmpeg (with libx264 and AAC encoding) and ffprobe on the queue host. Configure
+`FFMPEG_BINARY` and `FFPROBE_BINARY` if they are outside PATH. Run a supervised worker:
+
+```bash
+php artisan queue:work video --queue=videos --timeout=1800 --tries=3
+```
+
+The dedicated database queue connection reserves jobs for 1920 seconds, longer than
+the 1800-second job timeout. Keep the normal queue worker running for other jobs.
+Restart both workers when deploying. Use a shared cache supporting locks across workers.
+Allow writable local disk space for an original and its converted copy per worker;
+conversion runs with two FFmpeg threads. The worker host needs access to the same
+private media bucket and database as the web application.
+
+Uploads allow up to 10 attachments: photos/documents up to 10 MB each and videos up
+to 256 MB each (MP4, MOV, WebM, M4V). Set PHP `upload_max_filesize=256M`,
+`post_max_size=3G`, and the reverse proxy request body limit to at least 3 GB to allow
+a full batch, and configure suitable upload timeouts. Originals are streamed to GCS;
+processing downloads them to private temporary local storage.
+
+Videos become H.264/AAC MP4s, bounded by 1920×1080 without enlarging smaller videos,
+with aspect ratio preserved and fast-start playback. Compression is lossy and can
+occasionally produce a larger file. The timeline polls an authenticated status endpoint
+until ready, then displays an inline player with authenticated byte-range playback.
+The job reads the stored output back and verifies its SHA-256 before updating the
+media record and deleting the original. Failed conversions retain the original and
+show a download link. Inspect failures with `php artisan queue:failed` and retry with
+`php artisan queue:retry <uuid>` after fixing the cause. Retries also finish original
+cleanup if publication succeeded but deletion failed. No database migration is needed.
+
+GCS soft delete, versioning, or retention policies can keep deleted originals billable
+or prevent deletion. Review those bucket settings before enabling uploads. Do not
+apply automatic expiry to the originals prefix: failed jobs retain those originals
+for recovery. Monitor failed jobs and available temporary disk space. A worker killed
+by its host may leave a directory under `storage/app/video-processing`; remove stale
+directories only after confirming that no running job is using them.
+
 ### 5. Create the database and frontend build
 
 ```bash

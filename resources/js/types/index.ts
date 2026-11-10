@@ -27,7 +27,10 @@ export type ImageViewerMedia = {
     height: number | null;
 };
 
-export type TimelineMedia = ImageViewerMedia;
+export type TimelineMedia = ImageViewerMedia & {
+    status?: 'pending' | 'processing' | 'ready' | 'failed';
+    statusUrl?: string;
+};
 
 export type TimelinePostType = 'Memory' | 'Milestone' | 'Event' | 'Letter';
 
@@ -59,6 +62,7 @@ export type TimelinePost = {
     initial: string;
     images: TimelineMedia[];
     files: TimelineMedia[];
+    videos?: TimelineMedia[];
     tags: string[];
     comments: TimelineComment[];
     commentsCount: number;

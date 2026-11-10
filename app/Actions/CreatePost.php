@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\DTOs\PostData;
+use App\Jobs\ProcessVideo;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Posts\HashtagService;
@@ -40,7 +41,7 @@ readonly class CreatePost
 
             foreach ($mediaFiles as $sortOrder => $file) {
                 $stored = $this->mediaStorage->store($file, $post);
-                $post->media()->create([
+                $media = $post->media()->create([
                     'disk' => $this->mediaStorage->disk(),
                     'path' => $stored->path,
                     'original_name' => $file->getClientOriginalName(),
@@ -51,6 +52,10 @@ readonly class CreatePost
                     'metadata' => $stored->metadata,
                     'sort_order' => $sortOrder,
                 ]);
+
+                if ($media->isVideo()) {
+                    ProcessVideo::dispatch($media->id)->afterCommit();
+                }
             }
 
             return $post->load(['author', 'media', 'tags']);
