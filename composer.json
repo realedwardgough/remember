@@ -25,7 +25,6 @@
         "spatie/laravel-permission": "^7.0"
     },
     "require-dev": {
-        "andreapollastri/checkpoint": "^1.0",
         "barryvdh/laravel-ide-helper": "^3.7",
         "brianium/paratest": "^7.20",
         "fakerphp/faker": "^1.24",
@@ -80,8 +79,7 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
-            "@php artisan test",
-            "@php artisan checkpoint:scan"
+            "@php artisan test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

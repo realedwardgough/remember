@@ -3,7 +3,6 @@
 <p align="center">
   <a href="https://github.com/realedwardgough/remember/actions/workflows/tests.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/realedwardgough/remember/actions/workflows/lint.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/lint.yml/badge.svg" alt="Quality"></a>
-  <a href="https://github.com/realedwardgough/remember/actions/workflows/checkpoint.yml"><img src="https://github.com/realedwardgough/remember/actions/workflows/checkpoint.yml/badge.svg" alt="Security scan"></a>
   <a href="https://github.com/realedwardgough/remember/blob/master/LICENSE"><img src="https://img.shields.io/github/license/realedwardgough/remember" alt="MIT license"></a>
 </p>
 
