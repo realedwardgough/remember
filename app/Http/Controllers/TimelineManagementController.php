@@ -39,7 +39,10 @@ class TimelineManagementController extends Controller
                 'id' => $invite->id,
                 'username' => $invite->username,
                 'created_at' => $invite->created_at,
-                'url' => $invite->token === null ? null : URL::route('register.invite', ['token' => $invite->token]),
+                'expires_at' => $invite->expires_at,
+                'expired' => $invite->isExpired(),
+                'email' => $invite->email,
+                'url' => $invite->token === null || $invite->isExpired() ? null : URL::route('register.invite', ['token' => $invite->token]),
             ]),
         ]);
     }

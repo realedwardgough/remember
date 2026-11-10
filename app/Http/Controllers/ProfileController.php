@@ -14,6 +14,8 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         return Inertia::render(component: 'Profile', props: [
+            'status' => $request->session()->get('status'),
+            'twoFactorEnabled' => $request->user()->hasEnabledTwoFactorAuthentication(),
             'canManageTimeline' => $request->user()->hasRole(UserRole::ADMIN->value),
         ]);
     }

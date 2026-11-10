@@ -27,7 +27,7 @@ class TimelineInvitationController extends Controller
 
     public function store(StoreTimelineInvitationRequest $request): RedirectResponse
     {
-        $result = $this->createInvite->handle($request->validated('username'));
+        $result = $this->createInvite->handle($request->validated('username'), $request->validated('email'));
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -46,10 +46,17 @@ class TimelineInvitationController extends Controller
 
     public function notify(SendRegistrationInviteNotificationRequest $request, RegistrationInvite $registrationInvite): RedirectResponse
     {
-        if ($registrationInvite->isAccepted() || $registrationInvite->token === null) {
+        if ($registrationInvite->isAccepted() || $registrationInvite->isExpired() || $registrationInvite->token === null) {
             throw ValidationException::withMessages([
                 'email' => 'This invitation is no longer available to send.',
             ]);
+        }
+
+        if ($registrationInvite->email !== null && strcasecmp($registrationInvite->email, $request->validated('email')) !== 0) {
+            throw ValidationException::withMessages(['email' => 'Send this invitation to its reserved email address.']);
+        }
+        if ($registrationInvite->email === null) {
+            $registrationInvite->update(['email' => strtolower($request->validated('email'))]);
         }
 
         Notification::route('mail', $request->validated('email'))->notify(

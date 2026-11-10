@@ -10,7 +10,7 @@
         <meta name="apple-mobile-web-app-title" content="Remember">
 
         <meta name="color-scheme" content="light">
-        <style>html { background-color: #faf8f4; }</style>
+        <style nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">html { background-color: #faf8f4; }</style>
 
         <link rel="manifest" href="/site.webmanifest">
         <link rel="icon" href="/favicon.ico" sizes="any">

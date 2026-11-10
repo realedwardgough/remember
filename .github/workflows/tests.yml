@@ -55,8 +55,8 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Notification Service Worker Tests
-        run: npm run test:notifications
+      - name: Frontend Behaviour Tests
+        run: npm run test:browser
 
       - name: Tests
         run: php artisan test --compact --coverage --min=50

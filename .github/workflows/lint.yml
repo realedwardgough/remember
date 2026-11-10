@@ -40,6 +40,11 @@ jobs:
           composer install -q --no-ansi --no-interaction --no-progress --prefer-dist
           npm ci
 
+      - name: Audit Dependencies
+        run: |
+          composer audit --locked
+          npm audit
+
       - name: Generate Wayfinder Routes
         run: php artisan wayfinder:generate --with-form --no-interaction
 

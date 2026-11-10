@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RegistrationInvite whereUsername($value)
  * @mixin \Eloquent
  */
-#[Fillable(['username', 'token_hash', 'token', 'accepted_by', 'accepted_at'])]
+#[Fillable(['username', 'token_hash', 'token', 'accepted_by', 'accepted_at', 'email', 'expires_at'])]
 #[\Illuminate\Database\Eloquent\Attributes\Hidden(['token'])]
 class RegistrationInvite extends Model
 {
@@ -47,6 +47,11 @@ class RegistrationInvite extends Model
         return $this->accepted_at !== null;
     }
 
+    public function isExpired(): bool
+    {
+        return ($this->expires_at ?? $this->created_at?->addHours((int) config('security.invitation_lifetime_hours', 168)))?->isPast() ?? true;
+    }
+
     public function acceptedBy(): BelongsTo
     {
         return $this->belongsTo(related: User::class, foreignKey: 'accepted_by');
@@ -60,7 +65,9 @@ class RegistrationInvite extends Model
     protected function casts(): array
     {
         return [
-            'accepted_at' => 'datetime',
+            'accepted_at' => 'immutable_datetime',
+            'expires_at' => 'immutable_datetime',
+            'created_at' => 'immutable_datetime',
             'token' => 'encrypted',
         ];
     }

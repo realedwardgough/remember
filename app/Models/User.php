@@ -77,7 +77,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @mixin \Eloquent
  */
 #[Fillable(['name', 'email', 'password', 'username'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -85,6 +85,7 @@ class User extends Authenticatable
     use HasRoles;
     use HasSettings;
     use Notifiable;
+    use \Laravel\Fortify\TwoFactorAuthenticatable;
 
     public function wantsMessageAlerts(): bool
     {

@@ -29,6 +29,7 @@ class ProfileUpdateTest extends TestCase
     #[Test]
     public function profile_information_can_be_updated(): void
     {
+        \Illuminate\Support\Facades\Notification::fake();
         $user = User::factory()->create([
             'name' => 'Alex Morgan',
             'email' => 'alex@example.com',
@@ -40,13 +41,15 @@ class ProfileUpdateTest extends TestCase
             ->put(route('user-profile-information.update'), [
                 'name' => 'Alex James Morgan',
                 'email' => 'alex.morgan@example.com',
+                'current_password' => 'password',
             ])
             ->assertRedirect(route('profile.edit'));
 
         $user->refresh();
 
         $this->assertSame('Alex James Morgan', $user->name);
-        $this->assertSame('alex.morgan@example.com', $user->email);
+        $this->assertSame('alex@example.com', $user->email);
+        \Illuminate\Support\Facades\Notification::assertSentOnDemand(\App\Notifications\VerifyEmailChange::class);
     }
 
     #[Test]

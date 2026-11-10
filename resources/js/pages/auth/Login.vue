@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import TurnstileWidget from '@/components/TurnstileWidget.vue';
 import { home } from '@/routes';
 import { store } from '@/routes/login';
 
 defineProps<{
     status?: string;
 }>();
+const turnstileWidget = ref<InstanceType<typeof TurnstileWidget> | null>(null);
 </script>
 
 <template>
@@ -79,6 +82,7 @@ defineProps<{
                     </p>
 
                     <Form
+                        @error="turnstileWidget?.reset()"
                         v-bind="store.form()"
                         :reset-on-success="['password']"
                         v-slot="{ errors, processing }"
@@ -145,6 +149,11 @@ defineProps<{
                             Keep me logged in
                         </label>
 
+                        <TurnstileWidget
+                            ref="turnstileWidget"
+                            action="login"
+                            :error="errors['cf-turnstile-response']"
+                        />
                         <button
                             type="submit"
                             :disabled="processing"

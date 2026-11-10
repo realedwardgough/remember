@@ -31,6 +31,10 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'turnstile' => [
+                'enabled' => (bool) config('security.turnstile.enabled'),
+                'siteKey' => config('security.turnstile.enabled') ? config('security.turnstile.site_key') : null,
+            ],
             'version' => config('app.version'),
             'timeline' => fn (): array => $this->timeline(),
             'auth' => ['user' => $request->user()],
@@ -78,7 +82,7 @@ class HandleInertiaRequests extends Middleware
     /** @return array{name: string, description: ?string} */
     private function timeline(): array
     {
-        $timeline = Timeline::query()->first();
+        $timeline = auth()->check() ? Timeline::query()->first() : null;
 
         return [
             'name' => $timeline?->name ?? (string) config('app.name'),

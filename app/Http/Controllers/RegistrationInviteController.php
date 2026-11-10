@@ -17,10 +17,13 @@ class RegistrationInviteController extends Controller
             ->whereNull('accepted_at')
             ->firstOrFail();
 
+        abort_if($invite->isExpired(), 404);
+
         return Inertia::render('auth/Register', [
             'invite' => [
                 'token' => $token,
                 'username' => $invite->username,
+                'email' => $invite->email,
             ],
         ]);
     }

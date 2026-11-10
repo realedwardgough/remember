@@ -36,10 +36,14 @@ class CreateNewUser implements CreatesNewUsers
                 ->lockForUpdate()
                 ->first();
 
-            if ($invite === null || $invite->isAccepted()) {
+            if ($invite === null || $invite->isAccepted() || $invite->isExpired()) {
                 throw ValidationException::withMessages([
                     'invitation_token' => __('This registration invite is no longer valid.'),
                 ]);
+            }
+
+            if ($invite->email !== null && strcasecmp($invite->email, $input['email']) !== 0) {
+                throw ValidationException::withMessages(['email' => 'Use the email address this invitation was issued to.']);
             }
 
             Validator::make(['username' => $invite->username], [

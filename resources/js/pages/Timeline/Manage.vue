@@ -120,6 +120,25 @@
                                     >{{ errors.username }}</span
                                 >
                             </label>
+                            <label class="grid gap-2 text-sm font-semibold"
+                                >Recipient email (optional)
+                                <input
+                                    type="email"
+                                    name="email"
+                                    maxlength="254"
+                                    autocomplete="off"
+                                    class="rounded-xl border border-stone-200 px-3 py-2.5"
+                                />
+                                <span
+                                    v-if="errors.email"
+                                    class="text-red-700"
+                                    >{{ errors.email }}</span
+                                >
+                                <span class="text-xs text-stone-600"
+                                    >Reserve the link for this address.
+                                    Invitations expire after seven days.</span
+                                >
+                            </label>
                             <button
                                 type="submit"
                                 :disabled="processing"

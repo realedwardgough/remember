@@ -19,6 +19,13 @@ class EnsureApplicationIsNotSetup
     {
         abort_if(Timeline::query()->exists() || User::query()->exists(), 404);
 
+        if (app()->isProduction() || filled(config('security.setup_token'))) {
+            $token = $request->input('setup_token', $request->session()->get('setup_token'));
+            abort_unless(is_string($token) && filled(config('security.setup_token'))
+                && hash_equals((string) config('security.setup_token'), $token), 403);
+            $request->session()->put('setup_token', $token);
+        }
+
         return $next($request);
     }
 }

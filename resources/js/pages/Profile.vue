@@ -68,6 +68,26 @@
             </Link>
 
             <NotificationSettings />
+            <p v-if="status" role="status" class="surface p-5">{{ status }}</p>
+            <section class="surface grid gap-3 p-5">
+                <h2 class="text-xl font-semibold">Two-factor authentication</h2>
+                <p class="text-sm">
+                    {{
+                        twoFactorEnabled
+                            ? 'Your account is protected by an authenticator app.'
+                            : 'Protect your account with an authenticator app and recovery codes. Recommended for administrators.'
+                    }}
+                </p>
+                <Link
+                    href="/profile/security"
+                    class="button-secondary justify-self-start"
+                    >{{
+                        twoFactorEnabled
+                            ? 'Manage two-factor authentication'
+                            : 'Set up two-factor authentication'
+                    }}</Link
+                >
+            </section>
 
             <section class="grid items-start gap-6 xl:grid-cols-2">
                 <article class="surface overflow-hidden">
@@ -94,6 +114,7 @@
 
                     <Form
                         v-bind="updateProfile.form.put()"
+                        :reset-on-success="['current_password']"
                         v-slot="{ errors, processing, wasSuccessful }"
                         class="grid gap-5 p-5 sm:p-6"
                     >
@@ -137,6 +158,24 @@
                             </span>
                         </label>
 
+                        <label class="grid gap-2 text-sm font-semibold">
+                            Current password (required to change your email)
+                            <input
+                                name="current_password"
+                                type="password"
+                                autocomplete="current-password"
+                                class="rounded-xl border border-stone-200 px-3 py-2.5"
+                            />
+                            <span
+                                v-if="errors.current_password"
+                                class="text-red-700"
+                                >{{ errors.current_password }}</span
+                            >
+                        </label>
+                        <p class="text-sm text-stone-600">
+                            Email changes take effect after you confirm the link
+                            sent to your new address.
+                        </p>
                         <div class="flex flex-wrap items-center gap-4 pt-1">
                             <button
                                 type="submit"
@@ -349,7 +388,11 @@ import { update as updatePassword } from '@/routes/user-password';
 import { update as updateProfile } from '@/routes/user-profile-information';
 import type { PageProps } from '@/types';
 
-defineProps<{ canManageTimeline: boolean }>();
+defineProps<{
+    canManageTimeline: boolean;
+    twoFactorEnabled: boolean;
+    status?: string;
+}>();
 
 type ActiveModal = 'post' | 'search' | null;
 

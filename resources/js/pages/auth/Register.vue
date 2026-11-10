@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import TurnstileWidget from '@/components/TurnstileWidget.vue';
 import { home, login } from '@/routes';
 import { store } from '@/routes/register';
 
@@ -7,8 +9,10 @@ defineProps<{
     invite?: {
         token: string;
         username: string;
+        email?: string | null;
     } | null;
 }>();
+const turnstileWidget = ref<InstanceType<typeof TurnstileWidget> | null>(null);
 </script>
 
 <template>
@@ -103,6 +107,7 @@ defineProps<{
                     </div>
 
                     <Form
+                        @error="turnstileWidget?.reset()"
                         v-bind="store.form()"
                         :reset-on-success="[
                             'password',
@@ -154,6 +159,8 @@ defineProps<{
                                 Email address
                                 <input
                                     name="email"
+                                    :value="invite?.email ?? ''"
+                                    :readonly="!!invite?.email"
                                     type="email"
                                     autocomplete="email"
                                     required
@@ -228,6 +235,11 @@ defineProps<{
                             </label>
                         </div>
 
+                        <TurnstileWidget
+                            ref="turnstileWidget"
+                            action="register"
+                            :error="errors['cf-turnstile-response']"
+                        />
                         <button
                             type="submit"
                             :disabled="processing || !invite"

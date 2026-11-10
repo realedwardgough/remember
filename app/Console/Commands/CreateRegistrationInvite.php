@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 use function Laravel\Prompts\text;
 
 #[Description('Create a single-use registration invite link for a preset username')]
-#[Signature('users:create {username? : The username to reserve for the invited user}')]
+#[Signature('users:create {username? : The username to reserve for the invited user} {--email= : Optional recipient email address}')]
 class CreateRegistrationInvite extends Command
 {
     public function __construct(private readonly CreateRegistrationInviteAction $createInvite)
@@ -28,7 +28,8 @@ class CreateRegistrationInvite extends Command
     public function handle(): int
     {
         $username = Str::lower((string) ($this->argument('username') ?: text(label: 'What is the username?', required: true)));
-        $validator = Validator::make(['username' => $username], [
+        $validator = Validator::make(['username' => $username, 'email' => $this->option('email')], [
+            'email' => ['nullable', 'email:rfc', 'max:254'],
             'username' => ['required', 'string', 'max:50', 'alpha_dash:ascii', Rule::unique(User::class, 'username'), Rule::unique(RegistrationInvite::class, 'username')->whereNull('accepted_at')],
         ]);
 
@@ -40,7 +41,7 @@ class CreateRegistrationInvite extends Command
             return self::FAILURE;
         }
 
-        $result = $this->createInvite->handle($username);
+        $result = $this->createInvite->handle($username, $this->option('email'));
         $this->info('Registration invite created.');
         $this->line($result->url);
 

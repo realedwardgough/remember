@@ -21,6 +21,7 @@ class StoreTimelineInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'email' => ['nullable', 'email:rfc', 'max:254'],
             'username' => [
                 'required', 'string', 'lowercase', 'alpha_dash:ascii', 'max:50',
                 Rule::unique(User::class, 'username'),

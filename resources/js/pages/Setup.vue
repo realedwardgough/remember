@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { store } from '@/actions/App/Http/Controllers/SetupController';
 import AppIcon from '@/components/AppIcon.vue';
+import TurnstileWidget from '@/components/TurnstileWidget.vue';
+const turnstileWidget = ref<InstanceType<typeof TurnstileWidget> | null>(null);
 </script>
 
 <template>
@@ -60,6 +63,7 @@ import AppIcon from '@/components/AppIcon.vue';
                 </div>
 
                 <Form
+                    @error="turnstileWidget?.reset()"
                     v-bind="store.form()"
                     :reset-on-success="['password', 'password_confirmation']"
                     v-slot="{ errors, processing }"
@@ -208,6 +212,11 @@ import AppIcon from '@/components/AppIcon.vue';
                             </label>
                         </div>
                     </fieldset>
+                    <TurnstileWidget
+                        ref="turnstileWidget"
+                        action="setup"
+                        :error="errors['cf-turnstile-response']"
+                    />
 
                     <button
                         type="submit"

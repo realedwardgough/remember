@@ -21,6 +21,7 @@ class RefreshRegistrationInvite
         $token = Str::random(64);
         $invite->update([
             'token' => $token,
+            'expires_at' => now()->addHours((int) config('security.invitation_lifetime_hours', 168)),
             'token_hash' => RegistrationInvite::hashToken($token),
         ]);
 

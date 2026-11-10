@@ -399,3 +399,7 @@ Issues and pull requests are welcome. If you have an idea that would make Rememb
 ## License
 
 Remember is open-source software released under the MIT license.
+
+## Security
+
+See [security and production deployment](docs/security.md) for MFA setup, verified email changes, invitation expiry, optional Turnstile (disabled by default), and server deployment requirements.

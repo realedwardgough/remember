@@ -45,6 +45,16 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    $router->get('/profile/email/confirm', \App\Http\Controllers\ConfirmEmailChangeController::class)
+        ->middleware(['signed', 'throttle:10,1,email.confirm'])->name('profile.email.confirm');
+    $router->prefix('profile/security')->middleware(['password.confirm', 'cache.headers:private;no_store'])->group(function (Router $router): void {
+        $controller = \App\Http\Controllers\AccountSecurityController::class;
+        $router->get('/', [$controller, 'show'])->name('profile.security');
+        $router->post('/enable', [$controller, 'enable'])->middleware('throttle:5,1,mfa.enable');
+        $router->post('/confirm', [$controller, 'confirm'])->middleware('throttle:5,1,mfa.confirm');
+        $router->delete('/', [$controller, 'disable'])->middleware('throttle:5,1,mfa.disable');
+        $router->post('/recovery-codes', [$controller, 'recoveryCodes'])->middleware('throttle:5,1,mfa.recovery');
+    });
     $router->prefix('api/notifications')->name('notifications.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
         $controller = \App\Http\Controllers\NotificationSettingsController::class;
         $router->get('/', [$controller, 'show'])->name('show');
@@ -82,10 +92,10 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->put(uri: '/timeline', action: [TimelineController::class, 'update'])->name(name: 'timeline.update');
     $router->post(uri: '/timeline/invitations', action: [TimelineInvitationController::class, 'store'])->name(name: 'timeline.invitations.store');
     $router->put(uri: '/timeline/invitations/{registrationInvite}', action: [TimelineInvitationController::class, 'update'])->name(name: 'timeline.invitations.update');
-    $router->post(uri: '/timeline/invitations/{registrationInvite}/notification', action: [TimelineInvitationController::class, 'notify'])->name(name: 'timeline.invitations.notify');
+    $router->post(uri: '/timeline/invitations/{registrationInvite}/notification', action: [TimelineInvitationController::class, 'notify'])->middleware('throttle:5,1,invitations.notify')->name(name: 'timeline.invitations.notify');
     $router->put(uri: '/timeline/users/{user}/role', action: [TimelineUserRoleController::class, 'update'])->name(name: 'timeline.users.role.update');
     $router->delete(uri: '/timeline/users/{user}', action: [TimelineUserController::class, 'destroy'])->name(name: 'timeline.users.destroy');
-    $router->post(uri: '/posts', action: [PostController::class, 'store'])->name(name: 'posts.store');
+    $router->post(uri: '/posts', action: [PostController::class, 'store'])->middleware('throttle:10,1,posts.store')->name(name: 'posts.store');
     $router->get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
     $router->get(uri: '/posts/{post}/edit', action: [PostController::class, 'edit'])->name(name: 'posts.edit');
     $router->patch(uri: '/posts/{post}', action: [PostController::class, 'update'])->name(name: 'posts.update');
