@@ -34,16 +34,13 @@
                 }}</span
             >
         </button>
-        <video
+        <VideoPlayer
             v-else-if="video.status === 'ready' || !video.status"
             :src="video.url"
             :poster="video.thumbnailUrl ?? undefined"
+            :name="video.name"
             :autoplay="autoplay"
-            :aria-label="video.name"
-            controls
-            playsinline
-            preload="metadata"
-            class="max-h-96 w-full bg-black"
+            :expanded="expanded"
         />
         <div v-else class="p-4 text-sm text-slate-600" role="status">
             <p class="font-medium">{{ video.name }}</p>
@@ -66,12 +63,14 @@
 <script setup lang="ts">
 import { Play, Video } from 'lucide-vue-next';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import VideoPlayer from '@/components/VideoPlayer.vue';
 import type { TimelineMedia } from '@/types';
 
 const props = defineProps<{
     media: TimelineMedia;
     preview?: boolean;
     autoplay?: boolean;
+    expanded?: boolean;
 }>();
 const emit = defineEmits<{
     updated: [media: TimelineMedia];

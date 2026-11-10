@@ -128,6 +128,7 @@
                     :key="selectedVideo.id"
                     :media="selectedVideo"
                     autoplay
+                    expanded
                     @updated="updateVideo"
                 />
                 <p class="text-sm text-stone-600">
