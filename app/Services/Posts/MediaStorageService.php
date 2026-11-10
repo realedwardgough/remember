@@ -22,7 +22,9 @@ class MediaStorageService
     public function store(UploadedFile $file, Post $post): StoredMediaDTO
     {
         if (! str_starts_with($file->getMimeType() ?? '', 'image/')) {
-            $path = $file->store("posts/{$post->id}", ['disk' => $this->disk()]);
+            $video = str_starts_with($file->getMimeType() ?? '', 'video/');
+            $directory = $video ? "posts/{$post->id}/videos/originals" : "posts/{$post->id}";
+            $path = $file->store($directory, ['disk' => $this->disk(), 'visibility' => 'private']);
 
             return new StoredMediaDTO(
                 path: $path,
@@ -30,7 +32,7 @@ class MediaStorageService
                 size: $file->getSize(),
                 width: null,
                 height: null,
-                metadata: ['extension' => $file->extension()],
+                metadata: array_filter(['extension' => $file->extension(), 'status' => $video ? 'pending' : null]),
             );
         }
 

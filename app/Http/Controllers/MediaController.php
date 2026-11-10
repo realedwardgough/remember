@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Media;
+use App\Http\Resources\MediaResource;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +17,11 @@ class MediaController extends Controller
     public function show(Request $request, Media $media): Response|StreamedResponse
     {
         $this->authorizeMedia($request, $media);
+
+        if ($media->isVideo()) {
+            abort_unless(($media->metadata['status'] ?? 'ready') === 'ready', 425);
+            return $this->video($request, $media);
+        }
 
         // Recheck access before validating a browser's cached copy. Unchanged
         // media can then be reused without contacting cloud storage at all.
@@ -57,6 +64,80 @@ class MediaController extends Controller
                 'Content-Type' => $media->mime_type,
             ],
         );
+    }
+
+    public function status(Request $request, Media $media): JsonResponse
+    {
+        $this->authorizeMedia($request, $media);
+
+        return response()->json(MediaResource::make($media)->toArray($request))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    private function video(Request $request, Media $media): Response|StreamedResponse
+    {
+        $size = $media->size;
+        $start = 0;
+        $end = $size - 1;
+        $partial = false;
+        $range = $request->header('Range');
+        // Multiple ranges are ignored; single byte ranges support browser seeking.
+        if ($range !== null && ! str_contains($range, ',')) {
+            if (! preg_match('/^bytes=(\d*)-(\d*)$/D', $range, $matches)
+                || ($matches[1] === '' && $matches[2] === '')) {
+                return response('', 416, ['Content-Range' => "bytes */{$size}"]);
+            }
+            if ($matches[1] === '') {
+                $start = max(0, $size - (int) $matches[2]);
+            } else {
+                $start = (int) $matches[1];
+                $end = $matches[2] === '' ? $end : min($end, (int) $matches[2]);
+            }
+            if ($start > $end || $start >= $size) {
+                return response('', 416, ['Content-Range' => "bytes */{$size}"]);
+            }
+            $partial = true;
+        }
+        $headers = [
+            'Content-Type' => 'video/mp4', 'Accept-Ranges' => 'bytes',
+            'Content-Length' => (string) ($end - $start + 1),
+            'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff',
+        ];
+        if ($partial) {
+            $headers['Content-Range'] = "bytes {$start}-{$end}/{$size}";
+        }
+        if ($request->isMethod('HEAD')) {
+            return response('', $partial ? 206 : 200, $headers);
+        }
+
+        return response()->stream(function () use ($media, $start, $end): void {
+            $stream = Storage::disk($media->disk)->readStream($media->path);
+            abort_unless(is_resource($stream), 404);
+            try {
+                // GCS streams may not be seekable. Discard in bounded chunks in that case.
+                if ($start > 0 && (! stream_get_meta_data($stream)['seekable'] || fseek($stream, $start) !== 0)) {
+                    $skip = $start;
+                    while ($skip > 0 && ! feof($stream)) {
+                        $chunk = fread($stream, min(65536, $skip));
+                        if ($chunk === false || $chunk === '') {
+                            break;
+                        }
+                        $skip -= strlen($chunk);
+                    }
+                }
+                $remaining = $end - $start + 1;
+                while ($remaining > 0 && ! feof($stream)) {
+                    $chunk = fread($stream, min(65536, $remaining));
+                    if ($chunk === false || $chunk === '') {
+                        break;
+                    }
+                    echo $chunk;
+                    $remaining -= strlen($chunk);
+                }
+            } finally {
+                fclose($stream);
+            }
+        }, $partial ? 206 : 200, $headers);
     }
 
     private function authorizeMedia(Request $request, Media $media): void

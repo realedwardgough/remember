@@ -15,6 +15,8 @@ class MediaResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->original_name ?? basename($this->resource->path),
             'mimeType' => $this->resource->mime_type,
+            'status' => $this->resource->metadata['status'] ?? 'ready',
+            'statusUrl' => route('media.status', $this->resource, false),
             'size' => $this->resource->size,
             'url' => route('media.show', $this->resource, false),
             'downloadUrl' => route('media.download', $this->resource, false),

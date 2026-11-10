@@ -1,6 +1,10 @@
 <template>
     <div
-        v-if="post.images.length > 0 || post.files.length > 0"
+        v-if="
+            post.images.length > 0 ||
+            post.files.length > 0 ||
+            (post.videos?.length ?? 0) > 0
+        "
         class="mt-3 grid gap-3"
         @touchmove.passive="handleTouchMove"
         @touchcancel="cancelTap"
@@ -70,6 +74,12 @@
             </button>
         </div>
 
+        <TimelineVideo
+            v-for="video in post.videos ?? []"
+            :key="video.id"
+            :media="video"
+        />
+
         <div v-if="post.files.length > 0" class="flex flex-wrap gap-2">
             <a
                 v-for="file in post.files"
@@ -95,6 +105,7 @@
 import { useMediaQuery } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import ImageViewer from '@/components/ImageViewer.vue';
+import TimelineVideo from '@/components/TimelineVideo.vue';
 import { useDoubleTap } from '@/composables/useDoubleTap';
 import type { TapPosition } from '@/composables/useDoubleTap';
 import type { TimelineMedia, TimelinePost } from '@/types';

@@ -26,8 +26,13 @@ class TimelineResource extends JsonResource
                 ->values()
                 ->map(fn (Media $media): array => MediaResource::make($media)->toArray($request))
                 ->all(),
+            'videos' => $this->resource->media
+                ->filter(fn (Media $media): bool => $media->isVideo())
+                ->values()
+                ->map(fn (Media $media): array => MediaResource::make($media)->toArray($request))
+                ->all(),
             'files' => $this->resource->media
-                ->reject(fn (Media $media): bool => $media->isImage())
+                ->reject(fn (Media $media): bool => $media->isImage() || $media->isVideo())
                 ->values()
                 ->map(fn (Media $media): array => MediaResource::make($media)->toArray($request))
                 ->all(),

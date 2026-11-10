@@ -83,6 +83,11 @@ class Media extends Model
         return $this->belongsTo(related: Post::class);
     }
 
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mime_type, 'video/');
+    }
+
     public function isImage(): bool
     {
         return str_starts_with(haystack: $this->mime_type, needle: 'image/');

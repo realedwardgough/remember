@@ -92,5 +92,6 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->post(uri: '/comments/{comment}/heart', action: [CommentHeartController::class, 'toggle'])->name(name: 'comments.hearts.toggle');
     $router->post(uri: '/posts/{post}/heart', action: [HeartController::class, 'toggle'])->name(name: 'posts.hearts.toggle');
     $router->get(uri: '/media/{media}', action: [MediaController::class, 'show'])->name(name: 'media.show');
+    $router->get(uri: '/media/{media}/status', action: [MediaController::class, 'status'])->name(name: 'media.status');
     $router->get(uri: '/media/{media}/download', action: [MediaController::class, 'download'])->name(name: 'media.download');
 });
