@@ -114,6 +114,7 @@
 
                     <Form
                         v-bind="updateProfile.form.put()"
+                        error-bag="updateProfileInformation"
                         :reset-on-success="['current_password']"
                         v-slot="{ errors, processing, wasSuccessful }"
                         class="grid gap-5 p-5 sm:p-6"
@@ -219,6 +220,7 @@
 
                     <Form
                         v-bind="updatePassword.form.put()"
+                        error-bag="updatePassword"
                         :reset-on-success="[
                             'current_password',
                             'password',

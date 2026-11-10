@@ -51,6 +51,7 @@ defineProps<{
                 }}</code>
                 <Form
                     action="/profile/security/confirm"
+                    error-bag="confirmTwoFactorAuthentication"
                     method="post"
                     reset-on-success
                     v-slot="{ errors, processing }"

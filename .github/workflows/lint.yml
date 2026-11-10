@@ -45,6 +45,11 @@ jobs:
           composer audit --locked
           npm audit
 
+      - name: Prepare Application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+
       - name: Generate Wayfinder Routes
         run: php artisan wayfinder:generate --with-form --no-interaction
 
