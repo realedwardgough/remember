@@ -32,6 +32,7 @@ import { onBeforeUnmount, ref, watch } from 'vue';
 import type { TimelineMedia } from '@/types';
 
 const props = defineProps<{ media: TimelineMedia }>();
+const emit = defineEmits<{ updated: [media: TimelineMedia] }>();
 const video = ref(props.media);
 const statusUnavailable = ref(false);
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -66,6 +67,7 @@ const poll = async () => {
         }
 
         video.value = await response.json();
+        emit('updated', video.value);
         statusUnavailable.value = false;
     } catch {
         statusUnavailable.value = true;

@@ -27,6 +27,7 @@ import {
     Trash2,
     TriangleAlert,
     UserRound,
+    Video,
     X,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -38,6 +39,7 @@ const icons = {
     'fa-camera-retro': Image,
     'fa-image': Image,
     'fa-images': Images,
+    'fa-video': Video,
     'fa-calendar': CalendarDays,
     'fa-calendar-day': CalendarDays,
     'fa-star': Star,

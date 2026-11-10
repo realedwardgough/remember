@@ -48,6 +48,12 @@
                     :active="isGallery"
                 />
                 <NavigationLink
+                    icon="fa-solid fa-video"
+                    label="Videos"
+                    :link="videos()"
+                    :active="isVideos"
+                />
+                <NavigationLink
                     icon="fa-regular fa-comment"
                     label="Messages"
                     :link="messagesIndex()"
@@ -146,7 +152,7 @@ import { computed } from 'vue';
 import type { CSSProperties } from 'vue';
 import MobileNavigationLink from '@/components/MobileNavigationLink.vue';
 import NavigationLink from '@/components/NavigationLink.vue';
-import { gallery, home } from '@/routes';
+import { gallery, home, videos } from '@/routes';
 import { index as messagesIndex } from '@/routes/messages';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps, TimelinePostType } from '@/types';
@@ -160,6 +166,7 @@ const filters = computed(() => page.props.filters);
 const tags = computed(() => page.props.tags);
 const postTypes = computed(() => page.props.postTypes);
 const currentPath = computed(() => page.url.split('?')[0]);
+const isVideos = computed(() => currentPath.value === '/videos');
 const isGallery = computed(() => currentPath.value === '/gallery');
 const isMessages = computed(() => currentPath.value.startsWith('/messages'));
 const isProfile = computed(

@@ -87,6 +87,12 @@
                     >
                         <AppIcon name="fa-solid fa-images" /> Photos
                     </Link>
+                    <Link
+                        :href="videos()"
+                        class="type-chip bg-white text-stone-600 lg:hidden"
+                    >
+                        <AppIcon name="fa-solid fa-video" /> Videos
+                    </Link>
                 </nav>
 
                 <section
@@ -213,7 +219,7 @@ import PullToRefresh from '@/components/PullToRefresh.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import { gallery, home } from '@/routes';
+import { gallery, home, videos } from '@/routes';
 import type {
     PageProps,
     PaginatedTimelinePosts,

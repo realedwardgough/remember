@@ -372,3 +372,44 @@ test('real photo touches like without opening the viewer, including the compatib
     assert.equal(emitted[0][0], 'doubleTap');
     env.dispose();
 });
+
+test('video touches and compatibility clicks preserve native playback without opening or liking the post', () => {
+    const env = setup();
+    const card = env.component('TimelineCard', {
+        post: { id: 7, type: 'Memory', heartedByViewer: false },
+    });
+    // Native video controls retarget their events to the video element.
+    const video = {
+        closest: (selector) => selector.split(',').some((part) => part.trim() === 'video'),
+    };
+
+    for (const start of [100, 350]) {
+        card.cancelInteractiveTap({ target: video });
+        card.startPostTouch({ ...touchEvent(start), target: video });
+        const end = { ...touchEvent(start + 50, 100, 100, true), target: video };
+        card.endPostTouch(end);
+        assert.equal(end.defaultPrevented, undefined, 'native player behavior is preserved');
+        const click = tap(start + 60, { target: video, detail: 0, pointerType: 'mouse' });
+        card.openPost(click);
+    }
+
+    env.flush();
+    assert.equal(env.visits.length, 0, 'player interactions neither navigate nor like');
+    env.dispose();
+});
+
+test('touching video controls cancels an already pending post navigation', () => {
+    const env = setup();
+    const card = env.component('TimelineCard', {
+        post: { id: 7, type: 'Memory', heartedByViewer: false },
+    });
+    card.openPost(tap());
+    card.cancelInteractiveTap({
+        target: {
+            closest: (selector) => selector.split(',').some((part) => part.trim() === 'video'),
+        },
+    });
+    env.flush();
+    assert.equal(env.visits.length, 0);
+    env.dispose();
+});

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentHeartController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\VideoGalleryController;
 use App\Http\Controllers\HeartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
@@ -75,6 +76,7 @@ Route::middleware('auth')->group(function (Router $router): void {
 
     $router->get(uri: '/', action: [HomeController::class, 'index'])->name(name: 'home');
     $router->get(uri: '/gallery', action: [GalleryController::class, 'index'])->name(name: 'gallery');
+    $router->get(uri: '/videos', action: [VideoGalleryController::class, 'index'])->name(name: 'videos');
     $router->get(uri: '/profile', action: [ProfileController::class, 'edit'])->name(name: 'profile.edit');
     $router->get(uri: '/timeline/manage', action: TimelineManagementController::class)->name(name: 'timeline.manage');
     $router->put(uri: '/timeline', action: [TimelineController::class, 'update'])->name(name: 'timeline.update');

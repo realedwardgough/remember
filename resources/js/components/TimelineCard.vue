@@ -201,7 +201,7 @@ const {
     onDoubleTap: likePost,
 });
 const interactiveElements =
-    'a, button, input, textarea, select, [contenteditable], [role="dialog"], [data-post-engagement]';
+    'a, button, input, textarea, select, video, [contenteditable], [role="dialog"], [data-post-engagement]';
 const cancelInteractiveTap = (event: PointerEvent) => {
     if ((event.target as HTMLElement).closest(interactiveElements)) {
         cancelTap();

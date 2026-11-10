@@ -32,6 +32,12 @@ export type TimelineMedia = ImageViewerMedia & {
     statusUrl?: string;
 };
 
+export type GalleryVideo = TimelineMedia & {
+    postId: number;
+    postTitle: string | null;
+    postDate: string | null;
+};
+
 export type TimelinePostType = 'Memory' | 'Milestone' | 'Event' | 'Letter';
 
 export type TimelineFilters = {
