@@ -9,6 +9,22 @@ use Symfony\Component\Process\Process;
 
 class VideoTranscoder
 {
+    public function thumbnail(string $input, string $output): void
+    {
+        $process = new Process([
+            config('video.ffmpeg'), '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+            '-protocol_whitelist', 'file,pipe', '-i', $input,
+            '-map', '0:v:0', '-frames:v', '1',
+            '-vf', "thumbnail=30,scale=w='min(iw,960)':h='min(ih,960)':force_original_aspect_ratio=decrease,setsar=1",
+            '-an', '-q:v', '3', '-threads', '1', '-update', '1', $output,
+        ]);
+        $process->setTimeout(120)->mustRun();
+        $image = is_file($output) ? getimagesize($output) : false;
+        if ($image === false || $image[2] !== IMAGETYPE_JPEG) {
+            throw new RuntimeException('Video thumbnail failed validation.');
+        }
+    }
+
     /** @return array{width: int, height: int} */
     public function transcode(string $input, string $output): array
     {

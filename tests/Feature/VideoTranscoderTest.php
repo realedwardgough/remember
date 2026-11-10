@@ -39,6 +39,11 @@ class VideoTranscoderTest extends TestCase
                 $this->assertLessThanOrEqual(min($height, 1080), $dimensions['height']);
                 $this->assertEqualsWithDelta($width / $height, $dimensions['width'] / $dimensions['height'], 0.02);
                 $this->assertGreaterThan(0, filesize($output));
+                $thumbnail = $directory.'/thumbnail.jpg';
+                app(VideoTranscoder::class)->thumbnail($output, $thumbnail);
+                $image = getimagesize($thumbnail);
+                $this->assertSame(IMAGETYPE_JPEG, $image[2]);
+                $this->assertLessThanOrEqual(960, max($image[0], $image[1]));
                 $bytes = file_get_contents($output);
                 $this->assertLessThan(strpos($bytes, 'mdat'), strpos($bytes, 'moov'));
             }

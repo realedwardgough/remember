@@ -242,6 +242,19 @@ for recovery. Monitor failed jobs and available temporary disk space. A worker k
 by its host may leave a directory under `storage/app/video-processing`; remove stale
 directories only after confirming that no running job is using them.
 
+Video thumbnails are generated automatically on the same `video` queue after
+conversion. Private JPEG previews appear in the videos gallery and as posters on
+posts. The gallery opens a video player when a preview is tapped. Thumbnail failures
+do not prevent video playback; inspect and retry failed jobs as above.
+
+After deploying thumbnail support, restart workers and queue previews for existing
+videos (this does not compress or replace the videos):
+
+```bash
+php artisan queue:restart
+php artisan videos:generate-thumbnails
+```
+
 ### 5. Create the database and frontend build
 
 ```bash

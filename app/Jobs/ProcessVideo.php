@@ -47,6 +47,7 @@ class ProcessVideo implements ShouldQueue
         }
         $disk = Storage::disk($media->disk);
         if (($media->metadata['status'] ?? null) === 'ready') {
+            $this->queueThumbnail($media);
             $this->deleteOriginal($media);
             return;
         }
@@ -113,11 +114,12 @@ class ProcessVideo implements ShouldQueue
                     ...$dimensions,
                     'original_name' => pathinfo($current->original_name ?? 'video', PATHINFO_FILENAME).'.mp4',
                     'metadata' => [...($current->metadata ?? []), 'status' => 'ready', 'optimized' => true,
-                        'extension' => 'mp4', 'original_path' => $original, 'original_size' => $media->size],
+                        'thumbnail_status' => 'pending', 'extension' => 'mp4', 'original_path' => $original, 'original_size' => $media->size],
                 ]);
                 return true;
             });
             if ($published) {
+                $this->queueThumbnail($media->fresh());
                 $this->deleteOriginal($media->fresh());
             }
         } catch (Throwable $exception) {
@@ -141,6 +143,17 @@ class ProcessVideo implements ShouldQueue
         }
     }
 
+    private function queueThumbnail(Media $media): void
+    {
+        DB::transaction(function () use ($media): void {
+            $current = Media::query()->lockForUpdate()->find($media->id);
+            if ($current !== null && $current->thumbnail_path === null) {
+                $current->update(['metadata' => [...($current->metadata ?? []), 'thumbnail_status' => 'pending']]);
+                GenerateVideoThumbnail::dispatch($current->id)->afterCommit();
+            }
+        });
+    }
+
     private function deleteOriginal(Media $media): void
     {
         $original = $media->metadata['original_path'] ?? null;
@@ -148,9 +161,14 @@ class ProcessVideo implements ShouldQueue
             if (! Storage::disk($media->disk)->delete($original)) {
                 throw new RuntimeException('Could not delete original video.');
             }
-            $metadata = $media->metadata;
-            unset($metadata['original_path']);
-            $media->update(['metadata' => $metadata]);
+            DB::transaction(function () use ($media, $original): void {
+                $current = Media::query()->lockForUpdate()->find($media->id);
+                if ($current !== null && ($current->metadata['original_path'] ?? null) === $original) {
+                    $metadata = $current->metadata;
+                    unset($metadata['original_path']);
+                    $current->update(['metadata' => $metadata]);
+                }
+            });
         }
     }
 }

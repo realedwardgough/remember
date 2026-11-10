@@ -65,16 +65,21 @@
 
             <div
                 v-else
-                class="grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3"
+                class="-mx-4 grid grid-cols-2 items-stretch gap-px sm:-mx-8 lg:mx-0 lg:gap-3 xl:grid-cols-3"
             >
                 <article
                     v-for="video in videos"
                     :key="video.id"
-                    class="flex min-w-0 flex-col rounded-xl border border-stone-200 bg-white p-2"
+                    class="flex min-w-0 flex-col lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-2"
                 >
-                    <TimelineVideo :media="video" @updated="updateVideo" />
+                    <TimelineVideo
+                        :media="video"
+                        preview
+                        @open="selectedVideoId = video.id"
+                        @updated="updateVideo"
+                    />
 
-                    <div class="grid min-w-0 flex-1 gap-3 p-3 pt-4">
+                    <div class="hidden min-w-0 flex-1 gap-3 p-3 pt-4 lg:grid">
                         <div class="min-w-0">
                             <h2
                                 class="truncate text-base font-semibold text-zinc-950"
@@ -111,6 +116,66 @@
         </section>
 
         <Modal
+            :show="selectedVideo !== null"
+            :title="selectedVideo?.postTitle ?? selectedVideo?.name ?? 'Video'"
+            eyebrow="A closer look"
+            wide
+            mobile-fullscreen
+            @close="selectedVideoId = null"
+        >
+            <div v-if="selectedVideo" class="grid gap-4">
+                <TimelineVideo
+                    :key="selectedVideo.id"
+                    :media="selectedVideo"
+                    autoplay
+                    @updated="updateVideo"
+                />
+                <p class="text-sm text-stone-600">
+                    {{ selectedVideo.postDate }} · {{ selectedVideo.name }}
+                </p>
+                <div
+                    v-if="selectedPostVideos.length > 1"
+                    class="flex items-center justify-center gap-4"
+                >
+                    <button
+                        type="button"
+                        class="button-secondary disabled:opacity-30"
+                        :disabled="selectedIndex <= 0"
+                        @click="navigateVideo(-1)"
+                    >
+                        Previous video
+                    </button>
+                    <p class="text-sm text-stone-500" aria-live="polite">
+                        {{ selectedIndex + 1 }} of
+                        {{ selectedPostVideos.length }}
+                    </p>
+                    <button
+                        type="button"
+                        class="button-secondary disabled:opacity-30"
+                        :disabled="
+                            selectedIndex >= selectedPostVideos.length - 1
+                        "
+                        @click="navigateVideo(1)"
+                    >
+                        Next video
+                    </button>
+                </div>
+                <a
+                    :href="selectedVideo.downloadUrl"
+                    class="button-secondary justify-self-end"
+                >
+                    <AppIcon name="fa-solid fa-download" />
+                    {{
+                        selectedVideo.status === 'ready' ||
+                        !selectedVideo.status
+                            ? 'Download'
+                            : 'Download original'
+                    }}
+                </a>
+            </div>
+        </Modal>
+
+        <Modal
             :show="activeModal === 'post'"
             mobile-fullscreen
             title="Add a memory"
@@ -133,7 +198,7 @@
 
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import Modal from '@/components/Modal.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -151,11 +216,34 @@ const props = defineProps<{
 }>();
 
 const activeModal = ref<ActiveModal>(null);
-const videos = ref(props.videos);
+const videos = ref(props.videos.map((video) => ({ ...video })));
+const selectedVideoId = ref<number | null>(null);
+const selectedVideo = computed(
+    () =>
+        videos.value.find((video) => video.id === selectedVideoId.value) ??
+        null,
+);
+const selectedPostVideos = computed(() =>
+    videos.value.filter(
+        (video) => video.postId === selectedVideo.value?.postId,
+    ),
+);
+const selectedIndex = computed(() =>
+    selectedPostVideos.value.findIndex(
+        (video) => video.id === selectedVideoId.value,
+    ),
+);
+const navigateVideo = (direction: number) => {
+    const video = selectedPostVideos.value[selectedIndex.value + direction];
+
+    if (video) {
+        selectedVideoId.value = video.id;
+    }
+};
 watch(
     () => props.videos,
     (value) => {
-        videos.value = value;
+        videos.value = value.map((video) => ({ ...video }));
     },
 );
 const updateVideo = (media: TimelineMedia) => {

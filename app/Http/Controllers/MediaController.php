@@ -66,6 +66,18 @@ class MediaController extends Controller
         );
     }
 
+    public function thumbnail(Request $request, Media $media): StreamedResponse
+    {
+        $this->authorizeMedia($request, $media);
+        abort_unless($media->isVideo() && $media->thumbnail_path !== null, 404);
+
+        return Storage::disk($media->disk)->response($media->thumbnail_path, headers: [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function status(Request $request, Media $media): JsonResponse
     {
         $this->authorizeMedia($request, $media);

@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enum\TimelinePostType;
 use App\Jobs\ProcessVideo;
+use App\Jobs\GenerateVideoThumbnail;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
@@ -29,6 +30,7 @@ class VideoMediaTest extends TestCase
         parent::setUp();
         config(['filesystems.media_disk' => 'gcs']);
         Storage::fake('gcs');
+        Queue::fake([GenerateVideoThumbnail::class]);
     }
 
     private function video(array $metadata = ['status' => 'pending']): Media
@@ -97,6 +99,8 @@ class VideoMediaTest extends TestCase
         $this->assertSame('ready', $media->metadata['status']);
         $this->assertSame('video/mp4', $media->mime_type);
         $this->assertSame('family.mp4', $media->original_name);
+        Queue::assertPushed(GenerateVideoThumbnail::class, fn ($job) => $job->mediaId === $media->id);
+        $this->assertSame('pending', $media->metadata['thumbnail_status']);
         $this->assertSame(1280, $media->width);
         $this->assertSame('converted-video', Storage::disk('gcs')->get($media->path));
         Storage::disk('gcs')->assertMissing('posts/original.mov');

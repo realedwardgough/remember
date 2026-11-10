@@ -30,6 +30,8 @@ export type ImageViewerMedia = {
 export type TimelineMedia = ImageViewerMedia & {
     status?: 'pending' | 'processing' | 'ready' | 'failed';
     statusUrl?: string;
+    thumbnailUrl?: string | null;
+    thumbnailStatus?: 'pending' | 'processing' | 'ready' | 'failed' | null;
 };
 
 export type GalleryVideo = TimelineMedia & {

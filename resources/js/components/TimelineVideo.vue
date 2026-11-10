@@ -1,8 +1,44 @@
 <template>
     <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+        <button
+            v-if="preview"
+            type="button"
+            class="relative block aspect-square w-full overflow-hidden bg-slate-100 text-primary focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
+            :aria-label="`Open video: ${video.name}`"
+            @click.stop="emit('open', video)"
+        >
+            <img
+                v-if="video.thumbnailUrl"
+                :src="video.thumbnailUrl"
+                :alt="video.name"
+                loading="lazy"
+                class="size-full object-cover"
+            />
+            <Video v-else :size="48" class="mx-auto" aria-hidden="true" />
+            <span
+                class="absolute inset-0 flex items-center justify-center bg-black/10"
+            >
+                <span
+                    class="flex size-12 items-center justify-center rounded-full bg-black/60 text-white"
+                >
+                    <Play :size="24" fill="currentColor" aria-hidden="true" />
+                </span>
+            </span>
+            <span
+                v-if="video.status && video.status !== 'ready'"
+                class="absolute inset-x-0 bottom-0 bg-black/70 p-2 text-xs text-white"
+                >{{
+                    video.status === 'failed'
+                        ? 'Processing failed'
+                        : 'Preparing video…'
+                }}</span
+            >
+        </button>
         <video
-            v-if="video.status === 'ready' || !video.status"
+            v-else-if="video.status === 'ready' || !video.status"
             :src="video.url"
+            :poster="video.thumbnailUrl ?? undefined"
+            :autoplay="autoplay"
             :aria-label="video.name"
             controls
             playsinline
@@ -28,11 +64,19 @@
 </template>
 
 <script setup lang="ts">
+import { Play, Video } from 'lucide-vue-next';
 import { onBeforeUnmount, ref, watch } from 'vue';
 import type { TimelineMedia } from '@/types';
 
-const props = defineProps<{ media: TimelineMedia }>();
-const emit = defineEmits<{ updated: [media: TimelineMedia] }>();
+const props = defineProps<{
+    media: TimelineMedia;
+    preview?: boolean;
+    autoplay?: boolean;
+}>();
+const emit = defineEmits<{
+    updated: [media: TimelineMedia];
+    open: [media: TimelineMedia];
+}>();
 const video = ref(props.media);
 const statusUnavailable = ref(false);
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -43,7 +87,11 @@ const poll = async () => {
     if (
         stopped ||
         !video.value.statusUrl ||
-        !['pending', 'processing'].includes(video.value.status ?? '')
+        (!['pending', 'processing'].includes(video.value.status ?? '') &&
+            (video.value.thumbnailUrl ||
+                !['pending', 'processing'].includes(
+                    video.value.thumbnailStatus ?? '',
+                )))
     ) {
         return;
     }
