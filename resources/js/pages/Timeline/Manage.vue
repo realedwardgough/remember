@@ -9,7 +9,7 @@
 
         <Head title="Manage timeline" />
 
-        <section class="grid gap-6">
+        <section class="grid gap-3 lg:gap-6">
             <PageHeader
                 title="Your timeline & family"
                 eyebrow="Admin tools"

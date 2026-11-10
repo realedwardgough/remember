@@ -28,6 +28,7 @@ class GetGalleryImages
                 'height' => $media->height,
                 'mimeType' => $media->mime_type,
                 'size' => $media->size,
+                'postId' => $media->post_id,
                 'postTitle' => $media->post?->title,
                 'postDate' => $media->post?->published_at?->format('j F Y'),
             ])->all();

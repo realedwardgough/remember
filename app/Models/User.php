@@ -6,11 +6,15 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
+use Egough\LaravelSettings\Traits\HasSettings;
+use Egough\LaravelSettings\ModelSettings\Models\ModelSetting;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
@@ -79,7 +83,30 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory;
     use HasRoles;
+    use HasSettings;
     use Notifiable;
+
+    public function wantsMessageAlerts(): bool
+    {
+        return $this->settings()->get('notifications.message_alerts', false) === true;
+    }
+
+    public function wantsPostAlerts(): bool
+    {
+        return $this->settings()->get('notifications.post_alerts', false) === true;
+    }
+
+    public function scopeWhereSettingEnabled(Builder $query, string $key): void
+    {
+        $query->whereIn($this->qualifyColumn($this->getKeyName()), ModelSetting::query()
+            ->select('settingable_id')->where('settingable_type', $this->getMorphClass())
+            ->where('key', $key)->where('type', 'bool')->where('value', '1'));
+    }
+
+    public function messagingParticipant(): HasOne
+    {
+        return $this->hasOne(MessagingParticipant::class);
+    }
 
     public function posts(): HasMany
     {

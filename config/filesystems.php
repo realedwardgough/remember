@@ -7,6 +7,32 @@ $googleCloudKeyFilePath = filled($googleCloudKeyFile)
     ? (str_starts_with($googleCloudKeyFile, DIRECTORY_SEPARATOR) ? $googleCloudKeyFile : base_path($googleCloudKeyFile))
     : null;
 
+$googleCloudDisk = [
+    'driver' => 'gcs',
+    'key_file_path' => $googleCloudKeyFilePath,
+    'key_file' => array_filter([
+        'type' => env('GOOGLE_CLOUD_ACCOUNT_TYPE'),
+        'private_key_id' => env('GOOGLE_CLOUD_PRIVATE_KEY_ID'),
+        'private_key' => env('GOOGLE_CLOUD_PRIVATE_KEY'),
+        'client_email' => env('GOOGLE_CLOUD_CLIENT_EMAIL'),
+        'client_id' => env('GOOGLE_CLOUD_CLIENT_ID'),
+        'auth_uri' => env('GOOGLE_CLOUD_AUTH_URI'),
+        'token_uri' => env('GOOGLE_CLOUD_TOKEN_URI'),
+        'auth_provider_x509_cert_url' => env('GOOGLE_CLOUD_AUTH_PROVIDER_CERT_URL'),
+        'client_x509_cert_url' => env('GOOGLE_CLOUD_CLIENT_CERT_URL'),
+    ]),
+    'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
+    'bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
+    'path_prefix' => env('GOOGLE_CLOUD_STORAGE_PATH_PREFIX', ''),
+    'storage_api_uri' => env('GOOGLE_CLOUD_STORAGE_API_URI'),
+    'api_endpoint' => env('GOOGLE_CLOUD_STORAGE_API_ENDPOINT'),
+    'visibility' => env('GOOGLE_CLOUD_STORAGE_VISIBILITY', 'private'),
+    'visibility_handler' => env('GOOGLE_CLOUD_STORAGE_VISIBILITY_HANDLER', League\Flysystem\GoogleCloudStorage\UniformBucketLevelAccessVisibility::class),
+    'metadata' => ['cacheControl' => env('GOOGLE_CLOUD_STORAGE_CACHE_CONTROL', 'private,max-age=0')],
+    'throw' => true,
+    'report' => true,
+];
+
 return [
 
     /*
@@ -69,30 +95,13 @@ return [
             'report' => false,
         ],
 
-        'gcs' => [
-            'driver' => 'gcs',
-            'key_file_path' => $googleCloudKeyFilePath,
-            'key_file' => array_filter([
-                'type' => env('GOOGLE_CLOUD_ACCOUNT_TYPE'),
-                'private_key_id' => env('GOOGLE_CLOUD_PRIVATE_KEY_ID'),
-                'private_key' => env('GOOGLE_CLOUD_PRIVATE_KEY'),
-                'client_email' => env('GOOGLE_CLOUD_CLIENT_EMAIL'),
-                'client_id' => env('GOOGLE_CLOUD_CLIENT_ID'),
-                'auth_uri' => env('GOOGLE_CLOUD_AUTH_URI'),
-                'token_uri' => env('GOOGLE_CLOUD_TOKEN_URI'),
-                'auth_provider_x509_cert_url' => env('GOOGLE_CLOUD_AUTH_PROVIDER_CERT_URL'),
-                'client_x509_cert_url' => env('GOOGLE_CLOUD_CLIENT_CERT_URL'),
-            ]),
-            'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
-            'bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
-            'path_prefix' => env('GOOGLE_CLOUD_STORAGE_PATH_PREFIX', ''),
-            'storage_api_uri' => env('GOOGLE_CLOUD_STORAGE_API_URI'),
-            'api_endpoint' => env('GOOGLE_CLOUD_STORAGE_API_ENDPOINT'),
-            'visibility' => env('GOOGLE_CLOUD_STORAGE_VISIBILITY', 'private'),
-            'visibility_handler' => env('GOOGLE_CLOUD_STORAGE_VISIBILITY_HANDLER', League\Flysystem\GoogleCloudStorage\UniformBucketLevelAccessVisibility::class),
-            'metadata' => ['cacheControl' => env('GOOGLE_CLOUD_STORAGE_CACHE_CONTROL', 'private,max-age=0')],
-            'throw' => true,
-            'report' => true,
+        'gcs' => $googleCloudDisk,
+        'message_gcs' => [
+            ...$googleCloudDisk,
+            'bucket' => env('MESSAGE_GOOGLE_CLOUD_STORAGE_BUCKET', ''),
+            'path_prefix' => '',
+            'visibility' => 'private',
+            'metadata' => ['cacheControl' => 'private,no-store,max-age=0'],
         ],
 
     ],

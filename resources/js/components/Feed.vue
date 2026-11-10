@@ -1,8 +1,8 @@
 <template>
-    <section aria-label="Family timeline">
+    <section aria-label="Family timeline" class="-mx-4 sm:-mx-8 lg:mx-0">
         <div
             v-if="!timelinePosts.data.length"
-            class="surface px-6 py-12 text-center"
+            class="surface px-6 py-12 text-center max-lg:rounded-none max-lg:border-x-0 max-lg:shadow-none"
         >
             <Heart :size="32" class="mx-auto mb-4 text-primary" />
             <h2 class="story-font text-2xl">
@@ -20,7 +20,12 @@
                 }}
             </p>
         </div>
-        <InfiniteScroll v-else data="timelinePosts" as="ol" class="grid gap-5">
+        <InfiniteScroll
+            v-else
+            data="timelinePosts"
+            as="ol"
+            class="grid gap-0 lg:gap-5"
+        >
             <li
                 v-for="(post, index) in timelinePosts.data"
                 :key="post.id"
@@ -32,7 +37,7 @@
                         monthKey(post) !==
                             monthKey(timelinePosts.data[index - 1])
                     "
-                    class="mb-4 flex items-center gap-3 text-sm font-semibold text-stone-600"
+                    class="mb-4 hidden items-center gap-3 text-sm font-semibold text-stone-600 lg:flex"
                     :class="index > 0 ? 'mt-5' : ''"
                 >
                     <span>{{ monthLabel(post) }}</span
@@ -43,6 +48,7 @@
                 </h2>
                 <TimelineCard
                     :post="post"
+                    mobile-feed
                     @edit-post="emit('editPost', $event)"
                 />
             </li>
