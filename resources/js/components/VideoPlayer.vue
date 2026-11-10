@@ -184,7 +184,7 @@ import {
 } from 'lucide-vue-next';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = defineProps<{
+defineProps<{
     src: string;
     poster?: string;
     name: string;
@@ -207,16 +207,18 @@ const muted = ref(false);
 const controlsVisible = ref(true);
 const fullscreen = ref(false);
 const fullscreenAvailable = ref(false);
-let lastPointerType = '';
+const lastPointerType = ref('');
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
 const formatTime = (seconds: number) => {
     const total = Math.max(0, Math.floor(seconds));
     const minutes = Math.floor(total / 60);
+
     return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 };
 const scheduleHide = () => {
     clearTimeout(hideTimer);
+
     if (playing.value) {
         hideTimer = setTimeout(() => {
             controlsVisible.value = false;
@@ -228,7 +230,9 @@ const showControls = () => {
     scheduleHide();
 };
 const handlePointerMove = (event: PointerEvent) => {
-    if (event.pointerType === 'mouse') showControls();
+    if (event.pointerType === 'mouse') {
+        showControls();
+    }
 };
 const updateDuration = () => {
     const value = element.value?.duration ?? 0;
@@ -239,7 +243,9 @@ const updateTime = () => {
 };
 const handlePlay = () => {
     document.querySelectorAll('video').forEach((video) => {
-        if (video !== element.value && !video.paused) video.pause();
+        if (video !== element.value && !video.paused) {
+            video.pause();
+        }
     });
     playing.value = true;
     ended.value = false;
@@ -260,7 +266,11 @@ const handleError = () => {
 };
 const togglePlayback = async () => {
     const video = element.value;
-    if (!video || error.value) return;
+
+    if (!video || error.value) {
+        return;
+    }
+
     if (video.paused) {
         try {
             await video.play();
@@ -272,30 +282,42 @@ const togglePlayback = async () => {
     }
 };
 const handleVideoClick = (event: MouseEvent) => {
-    if (!enhanced.value) return;
+    if (!enhanced.value) {
+        return;
+    }
+
     // The first touch reveals hidden controls without interrupting playback.
     if (
-        ((event as PointerEvent).pointerType || lastPointerType) === 'touch' &&
+        ((event as PointerEvent).pointerType || lastPointerType.value) ===
+            'touch' &&
         !controlsVisible.value
     ) {
         showControls();
+
         return;
     }
+
     void togglePlayback();
     showControls();
 };
 const seek = (event: Event) => {
-    if (element.value)
+    if (element.value) {
         element.value.currentTime = Number(
             (event.target as HTMLInputElement).value,
         );
+    }
+
     updateTime();
     showControls();
 };
 const rememberVolume = () => {
-    if (!element.value) return;
+    if (!element.value) {
+        return;
+    }
+
     volume.value = element.value.volume;
     muted.value = element.value.muted;
+
     try {
         localStorage.setItem(
             'remember-video-volume',
@@ -306,14 +328,24 @@ const rememberVolume = () => {
     }
 };
 const toggleMute = () => {
-    if (!element.value) return;
+    if (!element.value) {
+        return;
+    }
+
     const wasSilent = element.value.muted || element.value.volume === 0;
-    if (element.value.volume === 0) element.value.volume = 1;
+
+    if (element.value.volume === 0) {
+        element.value.volume = 1;
+    }
+
     element.value.muted = !wasSilent;
     showControls();
 };
 const setVolume = (event: Event) => {
-    if (!element.value) return;
+    if (!element.value) {
+        return;
+    }
+
     element.value.volume = Number((event.target as HTMLInputElement).value);
     element.value.muted = element.value.volume === 0;
     showControls();
@@ -323,22 +355,26 @@ const updateFullscreen = () => {
 };
 const toggleFullscreen = async () => {
     try {
-        if (document.fullscreenElement === container.value)
+        if (document.fullscreenElement === container.value) {
             await document.exitFullscreen();
-        else if (
+        } else if (
             container.value?.requestFullscreen &&
             document.fullscreenEnabled
-        )
+        ) {
             await container.value.requestFullscreen();
-        else element.value?.webkitEnterFullscreen?.();
+        } else {
+            element.value?.webkitEnterFullscreen?.();
+        }
     } catch {
         showControls();
     }
 };
 const handleKeydown = (event: KeyboardEvent) => {
     // Leave buttons and sliders to their native keyboard interactions.
-    if (event.target !== container.value && event.target !== element.value)
+    if (event.target !== container.value && event.target !== element.value) {
         return;
+    }
+
     if (event.key === ' ' || event.key === 'k') {
         event.preventDefault();
         void togglePlayback();
@@ -357,21 +393,28 @@ const handleKeydown = (event: KeyboardEvent) => {
             ),
         );
         updateTime();
-    } else if (event.key === 'm') toggleMute();
-    else if (event.key === 'f') {
+    } else if (event.key === 'm') {
+        toggleMute();
+    } else if (event.key === 'f') {
         event.preventDefault();
         void toggleFullscreen();
     }
+
     showControls();
 };
 
 onMounted(() => {
     const video = element.value;
-    if (!video) return;
+
+    if (!video) {
+        return;
+    }
+
     try {
         const saved = JSON.parse(
             localStorage.getItem('remember-video-volume') ?? 'null',
         );
+
         if (
             saved &&
             typeof saved.volume === 'number' &&
@@ -383,6 +426,7 @@ onMounted(() => {
     } catch {
         /* Keep the browser's volume defaults. */
     }
+
     volume.value = video.volume;
     muted.value = video.muted;
     playing.value = !video.paused;
@@ -393,7 +437,10 @@ onMounted(() => {
     );
     document.addEventListener('fullscreenchange', updateFullscreen);
     enhanced.value = true;
-    if (playing.value) handlePlay();
+
+    if (playing.value) {
+        handlePlay();
+    }
 });
 onBeforeUnmount(() => {
     clearTimeout(hideTimer);

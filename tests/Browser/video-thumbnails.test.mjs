@@ -16,6 +16,7 @@ function loadPlayer() {
     }).outputText;
     const exports = {};
     vm.runInNewContext(code, { exports, require: (name) => name === 'vue' ? vue : {} });
+
     return exports.default;
 }
 
