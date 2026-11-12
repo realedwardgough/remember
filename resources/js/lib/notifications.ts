@@ -5,6 +5,7 @@ export type NotificationSettings = {
     public_key: string | null;
     message_alerts: boolean;
     post_alerts: boolean;
+    activity_alerts: boolean;
     device_enabled: boolean;
 };
 

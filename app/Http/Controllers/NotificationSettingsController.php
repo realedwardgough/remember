@@ -23,6 +23,7 @@ class NotificationSettingsController extends Controller
             ...$settings->publicSettings(),
             'message_alerts' => $request->user()->wantsMessageAlerts(),
             'post_alerts' => $request->user()->wantsPostAlerts(),
+            'activity_alerts' => $request->user()->wantsActivityAlerts(),
             'device_enabled' => $device !== null && ($device->expires_at === null || $device->expires_at->isFuture()),
         ]);
     }
@@ -30,8 +31,9 @@ class NotificationSettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'message_alerts' => ['required_without:post_alerts', 'boolean'],
-            'post_alerts' => ['required_without:message_alerts', 'boolean'],
+            'message_alerts' => ['required_without_all:post_alerts,activity_alerts', 'boolean'],
+            'post_alerts' => ['required_without_all:message_alerts,activity_alerts', 'boolean'],
+            'activity_alerts' => ['required_without_all:message_alerts,post_alerts', 'boolean'],
         ]);
         DB::transaction(function () use ($request, $data): void {
             foreach ($data as $key => $value) {

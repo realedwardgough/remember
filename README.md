@@ -89,16 +89,25 @@ Remember was created to help families preserve the moments that matter most. Rat
 
 ## In-app notifications
 
-New comments on a memory notify its author, excluding the author's own comments.
+New comments and likes on a post notify its author, excluding the author's own interactions.
 The bell shows the unread count immediately on authenticated page loads, refreshes
 every 30 seconds, and refreshes when returning to the app. Notifications work
-without browser push permissions. Opening an item marks it read and links to the
-highlighted comment; opening the list leaves unread items unchanged. Read state
+without browser push permissions. Opening an item marks it read and opens the
+post (highlighting the relevant comment); opening the list leaves unread items unchanged. Read state
 is stored against the account across devices, and “Mark all as read” clears the
-account's unread activity. Message badges remain separate.
+account's unread activity. Message badges remain separate. Removing a like removes
+its in-app notification and pending device alerts.
+
+To receive phone or browser push alerts, open Account → Notifications, turn on
+“Comments & likes on my posts”, and enable each device. This preference is separate
+from message and new-post alerts and defaults to off. On iPhone/iPad, use Remember
+from its Home Screen icon and allow notifications. Tapping a push opens the in-app
+notification list. Existing push configuration, queue workers, and the scheduled
+`messages:retry-push` recovery command are also required. Pending activity alerts
+are skipped if read, removed, no longer visible, or disabled before delivery.
 
 Run `php artisan migrate` and `npm run build` when installing this update.
-Notifications start with new comments after installation; existing comments are
+Notifications start with new comments and likes after installation; existing interactions are
 not backfilled. Deleted comments and unavailable posts are excluded from the
 notification list and unread count.
 

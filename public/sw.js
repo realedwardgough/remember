@@ -3,7 +3,7 @@ self.addEventListener('install', (event) => event.waitUntil(self.skipWaiting()))
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 function destination(value) {
-    return typeof value === 'string' && (/^\/(?:messages|posts)\/[1-9]\d*$/.test(value) || value === '/profile#notifications')
+    return typeof value === 'string' && (/^\/(?:messages|posts)\/[1-9]\d*$/.test(value) || value === '/profile#notifications' || value === '/notifications')
         ? value : null;
 }
 function preview(value, limit) {
@@ -17,15 +17,16 @@ self.addEventListener('push', (event) => {
     const url = target ?? '/profile#notifications';
     const message = target?.startsWith('/messages/');
     const post = target?.startsWith('/posts/');
-    const test = !message && !post && payload.tag === 'remember-test';
-    const title = message || post ? preview(payload.title, 120) || 'Remember' : 'Remember';
+    const activity = target === '/notifications';
+    const test = !message && !post && !activity && payload.tag === 'remember-test';
+    const title = message || post || activity ? preview(payload.title, 120) || 'Remember' : 'Remember';
     const body = test ? 'Notifications are working on this device.'
-        : message || post ? preview(payload.body, 240) || (post ? 'There is a new post in Remember.' : 'You have a new message in Remember.')
+        : message || post || activity ? preview(payload.body, 240) || (activity ? 'There is new activity on your posts.' : post ? 'There is a new post in Remember.' : 'You have a new message in Remember.')
         : 'You have a new message in Remember.';
     event.waitUntil(self.registration.showNotification(title, {
         body,
         icon: '/apple-touch-icon.png',
-        tag: message ? `remember-conversation-${url.split('/').pop()}` : post ? `remember-post-${url.split('/').pop()}` : 'remember-test',
+        tag: message ? `remember-conversation-${url.split('/').pop()}` : post ? `remember-post-${url.split('/').pop()}` : activity ? (/^remember-activity-[1-9]\d*$/.test(payload.tag) ? payload.tag : 'remember-activity') : 'remember-test',
         data: { url },
     }));
 });

@@ -97,6 +97,11 @@ class User extends Authenticatable
         return $this->settings()->get('notifications.post_alerts', false) === true;
     }
 
+    public function wantsActivityAlerts(): bool
+    {
+        return $this->settings()->get('notifications.activity_alerts', false) === true;
+    }
+
     public function scopeWhereSettingEnabled(Builder $query, string $key): void
     {
         $query->whereIn($this->qualifyColumn($this->getKeyName()), ModelSetting::query()

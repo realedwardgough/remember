@@ -18,14 +18,15 @@ class ActivityNotificationController extends Controller
         return Inertia::render('Notifications', [
             'activityNotifications' => fn () => ActivityNotification::query()
                 ->visibleTo($request->user())
-                ->with(['comment.author', 'comment.post'])
+                ->with(['comment.author', 'comment.post', 'heart.user', 'heart.post'])
                 ->orderByDesc('id')
                 ->paginate(20)
                 ->through(fn (ActivityNotification $notification): array => [
                     'id' => $notification->id,
-                    'author' => $notification->comment->author?->name ?? 'Family',
-                    'preview' => Str::limit($notification->comment->content, 160),
-                    'postTitle' => $notification->comment->post->title,
+                    'kind' => $notification->comment_id !== null ? 'comment' : 'like',
+                    'author' => $notification->actor()?->name ?? 'Family',
+                    'preview' => $notification->comment_id !== null ? Str::limit($notification->comment->content, 160) : null,
+                    'postTitle' => $notification->relatedPost()->title,
                     'createdAt' => $notification->created_at->toIso8601String(),
                     'timeAgo' => $notification->created_at->diffForHumans(),
                     'read' => $notification->read_at !== null,
@@ -36,12 +37,14 @@ class ActivityNotificationController extends Controller
     public function open(Request $request, int $notification): RedirectResponse
     {
         $activity = ActivityNotification::query()->visibleTo($request->user())
-            ->with('comment')->findOrFail($notification);
+            ->with(['comment.post', 'heart.post'])->findOrFail($notification);
 
         ActivityNotification::query()->whereKey($activity->id)->whereNull('read_at')
             ->update(['read_at' => now()]);
 
-        return redirect()->to(route('posts.show', $activity->comment->post_id).'#comment-'.$activity->comment_id);
+        $anchor = $activity->comment_id !== null ? '#comment-'.$activity->comment_id : '';
+
+        return redirect()->to(route('posts.show', $activity->relatedPost()->id).$anchor);
     }
 
     public function readAll(Request $request): RedirectResponse

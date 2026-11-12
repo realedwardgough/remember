@@ -6,6 +6,7 @@ namespace App\Services\Messaging;
 
 use App\Models\Message;
 use App\Models\Post;
+use App\Models\ActivityNotification;
 use Illuminate\Support\Str;
 
 class PushPreview
@@ -37,5 +38,18 @@ class PushPreview
     private function text(string $value, int $limit): string
     {
         return Str::limit(Str::squish($value), $limit);
+    }
+
+    public function activity(ActivityNotification $activity): array
+    {
+        $action = $activity->comment_id !== null ? ' commented on your post' : ' liked your post';
+
+        return [
+            'title' => $this->text($activity->actor()?->name ?? 'Family', 80).$action,
+            'body' => $this->text($activity->relatedPost()->title, 240),
+            'kind' => 'activity',
+            'url' => '/notifications',
+            'tag' => 'remember-activity-'.$activity->id,
+        ];
     }
 }

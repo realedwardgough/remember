@@ -8,6 +8,7 @@ use App\Models\ConversationMembership;
 use App\Models\Message;
 use App\Models\MessagePushDelivery;
 use App\Models\Post;
+use App\Models\ActivityNotification;
 use App\Services\Messaging\PushPreview;
 use Illuminate\Support\Facades\Gate;
 use App\Models\PushSubscription;
@@ -44,10 +45,12 @@ class SendMessagePush implements ShouldQueue
             }
             $message = $delivery->message_id === null ? null : Message::query()->find($delivery->message_id);
             $post = $delivery->post_id === null ? null : Post::query()->find($delivery->post_id);
+            $activity = $delivery->activity_notification_id === null ? null : ActivityNotification::query()->find($delivery->activity_notification_id);
             $authorized = match ($delivery->kind) {
                 'message' => $this->unreadFor($message, $device),
                 'post' => $this->postVisibleFor($post, $device),
-                'test' => $delivery->message_id === null && $delivery->post_id === null,
+                'activity' => $this->activityUnreadFor($activity, $device),
+                'test' => $delivery->message_id === null && $delivery->post_id === null && $delivery->activity_notification_id === null,
                 default => false,
             };
             if (! $settings->available() || $delivery->expires_at->lessThanOrEqualTo(now()) || $delivery->attempts >= 4
@@ -62,6 +65,7 @@ class SendMessagePush implements ShouldQueue
                 $payload = match ($delivery->kind) {
                     'message' => app(PushPreview::class)->message($message),
                     'post' => app(PushPreview::class)->post($post),
+                    'activity' => app(PushPreview::class)->activity($activity),
                     default => [
                         'title' => 'Remember', 'body' => 'Notifications are working on this device.', 'kind' => 'test',
                         'url' => '/profile#notifications', 'tag' => 'remember-test',
@@ -98,6 +102,16 @@ class SendMessagePush implements ShouldQueue
         return $post !== null && $post->author_id !== null && $user !== null && $post->author_id !== $user->id
             && $user->wantsPostAlerts()
             && Gate::forUser($user)->allows('view', $post);
+    }
+
+    private function activityUnreadFor(?ActivityNotification $activity, PushSubscription $device): bool
+    {
+        $user = User::query()->find($device->user_id);
+
+        return $activity !== null && $user !== null && $user->wantsActivityAlerts()
+            && $activity->read_at === null && $activity->actor() !== null
+            && $activity->actor()->id !== $user->id
+            && ActivityNotification::query()->visibleTo($user)->whereKey($activity->id)->exists();
     }
 
     private function unreadFor(?Message $message, PushSubscription $device): bool

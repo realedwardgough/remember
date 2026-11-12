@@ -241,6 +241,28 @@ test('invalid destinations do not show supplied previews and text is bounded', a
     assert.equal(Array.from(app.shown[0].body).length, 240);
 });
 
+test('comment and like pushes display activity previews and open the notification list', async () => {
+    const app = worker();
+    await app.event('push', {
+        data: { json: () => ({ title: 'Alex liked your post', body: 'First steps', url: '/notifications', tag: 'remember-activity-42' }) },
+    });
+    assert.equal(app.shown[0].title, 'Alex liked your post');
+    assert.equal(app.shown[0].body, 'First steps');
+    assert.equal(app.shown[0].tag, 'remember-activity-42');
+    await app.event('notificationclick', { notification: { close() {}, data: app.shown[0].data } });
+    assert.deepEqual(app.opened, ['/notifications']);
+});
+
+test('activity pushes use safe tags and reject arbitrary notification destinations', async () => {
+    const app = worker();
+    await app.event('push', { data: { json: () => ({ url: '/notifications', tag: 'remember-conversation-1' }) } });
+    assert.equal(app.shown[0].tag, 'remember-activity');
+    assert.equal(app.shown[0].body, 'There is new activity on your posts.');
+    await app.event('push', { data: { json: () => ({ url: '/notifications?redirect=evil', title: 'Unsafe' }) } });
+    assert.equal(app.shown[1].title, 'Remember');
+    assert.equal(app.shown[1].data.url, '/profile#notifications');
+});
+
 test('a worker update activates previews for existing open Home Screen apps', async () => {
     const app = worker();
     await app.event('install', {});

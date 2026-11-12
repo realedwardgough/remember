@@ -30,6 +30,11 @@
                     Mark all as read
                 </button>
             </header>
+            <Link
+                :href="`${profileEdit.url()}#notifications`"
+                class="mb-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline"
+                >Manage device alerts</Link
+            >
             <div
                 v-if="activityNotifications.data.length"
                 class="surface overflow-hidden"
@@ -51,19 +56,32 @@
                             <span
                                 class="flex size-10 shrink-0 items-center justify-center rounded-full bg-lilac text-primary"
                             >
-                                <MessageCircle :size="20" aria-hidden="true" />
+                                <component
+                                    :is="
+                                        notification.kind === 'like'
+                                            ? Heart
+                                            : MessageCircle
+                                    "
+                                    :size="20"
+                                    aria-hidden="true"
+                                />
                             </span>
                             <span class="min-w-0 flex-1">
                                 <span
                                     class="block text-sm leading-6 break-words text-stone-800"
                                 >
                                     <strong>{{ notification.author }}</strong>
-                                    commented on
+                                    {{
+                                        notification.kind === 'like'
+                                            ? 'liked'
+                                            : 'commented on'
+                                    }}
                                     <strong>{{
                                         notification.postTitle
                                     }}</strong>
                                 </span>
                                 <span
+                                    v-if="notification.preview"
                                     class="mt-1 line-clamp-2 block text-sm leading-6 break-words text-stone-600"
                                     >{{ notification.preview }}</span
                                 >
@@ -91,7 +109,8 @@
                 />
                 <h2 class="text-lg font-semibold">No notifications yet</h2>
                 <p class="mt-2 text-sm leading-6 text-stone-500">
-                    When someone comments on your memories, you’ll see it here.
+                    When someone comments on or likes your posts, you’ll see it
+                    here.
                 </p>
             </div>
             <nav
@@ -137,7 +156,7 @@
 </template>
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { Bell, CheckCheck, MessageCircle } from 'lucide-vue-next';
+import { Bell, CheckCheck, Heart, MessageCircle } from 'lucide-vue-next';
 import { ref } from 'vue';
 import Modal from '@/components/Modal.vue';
 import PostForm from '@/components/PostForm.vue';
@@ -145,14 +164,16 @@ import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import BaseLayout from '@/layouts/BaseLayout.vue';
 import { open as openNotification, readAll } from '@/routes/activity';
+import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps } from '@/types';
 
 defineProps<{
     activityNotifications: {
         data: {
             id: number;
+            kind: 'comment' | 'like';
             author: string;
-            preview: string;
+            preview: string | null;
             postTitle: string;
             createdAt: string;
             timeAgo: string;

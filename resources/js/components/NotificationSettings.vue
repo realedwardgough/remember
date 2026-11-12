@@ -67,6 +67,31 @@
                     Edits and your own posts do not send alerts.
                 </p>
             </div>
+            <div class="mt-5 border-b pb-5">
+                <label class="flex min-h-12 items-center gap-3 font-semibold">
+                    <input
+                        type="checkbox"
+                        class="size-5 accent-primary"
+                        :checked="settings.activity_alerts"
+                        :disabled="busy"
+                        @change="
+                            setPreference(
+                                'activity_alerts',
+                                ($event.target as HTMLInputElement).checked,
+                            )
+                        "
+                    />
+                    Comments & likes on my posts
+                </label>
+                <p class="mt-1 text-sm text-stone-600">
+                    {{
+                        settings.activity_alerts
+                            ? 'On — get device alerts when someone comments on or likes your posts.'
+                            : 'Off — comment and like alerts are paused on all your devices.'
+                    }}
+                    Your in-app notifications are always available.
+                </p>
+            </div>
             <div class="mt-5 grid gap-3">
                 <h3 class="font-semibold">This device</h3>
                 <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
@@ -355,7 +380,7 @@ async function refresh() {
     }
 }
 async function setPreference(
-    preference: 'message_alerts' | 'post_alerts',
+    preference: 'message_alerts' | 'post_alerts' | 'activity_alerts',
     enabled: boolean,
 ) {
     busy.value = true;
@@ -370,7 +395,9 @@ async function setPreference(
         const label =
             preference === 'message_alerts'
                 ? 'Message alerts'
-                : 'New-post alerts';
+                : preference === 'post_alerts'
+                  ? 'New-post alerts'
+                  : 'Comment and like alerts';
         feedback.value = enabled
             ? `${label} turned on for your account.`
             : `${label} paused on all your devices.`;
