@@ -1,14 +1,11 @@
 <template>
     <main class="min-h-dvh bg-canvas text-stone-800">
-        <header
-            v-if="page.props.auth?.user && !hideMobileHeader"
-            class="sticky top-0 z-30 flex items-center justify-between border-b bg-white/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-lg lg:hidden"
+        <div
+            v-if="page.props.auth?.user && !hideFloatingNotifications"
+            class="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 rounded-full border border-stone-200 bg-white shadow-lg lg:hidden"
         >
-            <Link :href="home()" class="story-font text-2xl"
-                >Remember <span class="text-rose-500">♡</span></Link
-            >
             <NotificationBell />
-        </header>
+        </div>
         <div
             v-if="$slots.sidebar"
             class="lg:grid lg:min-h-dvh lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start"
@@ -59,7 +56,7 @@ import { reconcilePushDevice } from '@/lib/notifications';
 import { home } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps } from '@/types';
-defineProps<{ hideMobileHeader?: boolean }>();
+defineProps<{ hideFloatingNotifications?: boolean }>();
 const page = usePage<PageProps>();
 const notificationProps = ['unreadNotificationsCount', 'activityNotifications'];
 const { start: startNotificationPolling } = usePoll(

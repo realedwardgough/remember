@@ -1,5 +1,5 @@
 <template>
-    <BaseLayout hide-mobile-header>
+    <BaseLayout hide-floating-notifications>
         <template #sidebar
             ><Sidebar
                 :mobile-navigation-style="mobileNavigationStyle"
