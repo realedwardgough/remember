@@ -62,6 +62,60 @@ test('post players use thumbnail posters and retain native controls before enhan
     assert.doesNotMatch(html, /<video[^>]*autoplay/);
 });
 
+test('feed videos show a lazy thumbnail without requesting video metadata', async () => {
+    const html = await render({ media, clickToPlay: true });
+    assert.match(html, /<button[^>]*aria-label="Open video: Family video"/);
+    assert.match(html, /<img[^>]*src="\/media\/1\/thumbnail"[^>]*loading="lazy"/);
+    assert.doesNotMatch(html, /<video[\s>]/);
+    assert.doesNotMatch(html, /src="\/media\/1"/);
+
+    const withoutThumbnail = await render({
+        media: { ...media, thumbnailUrl: null }, clickToPlay: true,
+    });
+    assert.match(withoutThumbnail, /<button/);
+    assert.doesNotMatch(withoutThumbnail, /<video[\s>]/);
+});
+
+test('feed videos retain processing and failed download states', async () => {
+    const processing = await render({ media: { ...media, status: 'processing' }, clickToPlay: true });
+    assert.match(processing, /Preparing your video/);
+    assert.doesNotMatch(processing, /<video[\s>]/);
+    const failed = await render({ media: { ...media, status: 'failed' }, clickToPlay: true });
+    assert.match(failed, /Download original/);
+    assert.doesNotMatch(failed, /<video[\s>]/);
+});
+
+test('opening a feed video activates playback while gallery previews emit open', () => {
+    const script = ts.transpileModule(compileScript(parse(source).descriptor, {
+        id: 'video-activation-test',
+    }).content, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    const module = { exports: {} };
+    vm.runInNewContext(script, {
+        exports: module.exports,
+        require: (name) => name === 'vue'
+            ? { ...vue, onBeforeUnmount() {} }
+            : dependencies[name] ?? {},
+        setTimeout: () => 0, clearTimeout() {},
+    });
+    const events = [];
+    const setup = (props) => module.exports.default.setup(props, {
+        expose() {}, emit: (...args) => events.push(args),
+    });
+    const feed = setup({ media, clickToPlay: true });
+    assert.equal(feed.activated.value, false);
+    feed.openVideo();
+    assert.equal(feed.activated.value, true);
+    assert.equal(events.length, 0);
+
+    const gallery = setup({ media, preview: true });
+    gallery.openVideo();
+    assert.equal(gallery.activated.value, false);
+    assert.equal(events[0][0], 'open');
+    assert.equal(events[0][1].id, media.id);
+});
+
 test('the gallery viewer requests autoplay and processing previews remain available to open', async () => {
     const html = await render({ media, autoplay: true });
     assert.match(html, /<video[^>]*autoplay/);

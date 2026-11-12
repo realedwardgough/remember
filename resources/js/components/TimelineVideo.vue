@@ -1,11 +1,17 @@
 <template>
     <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
         <button
-            v-if="preview"
+            v-if="
+                preview ||
+                (clickToPlay &&
+                    !activated &&
+                    (video.status === 'ready' || !video.status))
+            "
             type="button"
-            class="relative block aspect-square w-full overflow-hidden bg-slate-100 text-primary focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
+            class="relative block w-full overflow-hidden bg-slate-100 text-primary focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
+            :class="preview ? 'aspect-square' : 'aspect-video'"
             :aria-label="`Open video: ${video.name}`"
-            @click.stop="emit('open', video)"
+            @click.stop="openVideo"
         >
             <img
                 v-if="video.thumbnailUrl"
@@ -39,7 +45,7 @@
             :src="video.url"
             :poster="video.thumbnailUrl ?? undefined"
             :name="video.name"
-            :autoplay="autoplay"
+            :autoplay="autoplay || activated"
             :expanded="expanded"
         />
         <div v-else class="p-4 text-sm text-slate-600" role="status">
@@ -69,6 +75,7 @@ import type { TimelineMedia } from '@/types';
 const props = defineProps<{
     media: TimelineMedia;
     preview?: boolean;
+    clickToPlay?: boolean;
     autoplay?: boolean;
     expanded?: boolean;
 }>();
@@ -77,7 +84,16 @@ const emit = defineEmits<{
     open: [media: TimelineMedia];
 }>();
 const video = ref(props.media);
+const activated = ref(false);
 const statusUnavailable = ref(false);
+
+const openVideo = () => {
+    if (props.preview) {
+        emit('open', video.value);
+    } else {
+        activated.value = true;
+    }
+};
 let timer: ReturnType<typeof setTimeout> | undefined;
 let controller: AbortController | undefined;
 let stopped = false;
@@ -128,6 +144,9 @@ const poll = async () => {
 watch(
     () => props.media,
     (media) => {
+        if (media.id !== video.value.id) {
+            activated.value = false;
+        }
         video.value = media;
         clearTimeout(timer);
         timer = setTimeout(poll, 5000);

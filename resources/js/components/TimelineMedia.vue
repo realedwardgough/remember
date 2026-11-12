@@ -78,6 +78,7 @@
             v-for="video in post.videos ?? []"
             :key="video.id"
             :media="video"
+            click-to-play
         />
 
         <div v-if="post.files.length > 0" class="flex flex-wrap gap-2">
