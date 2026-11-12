@@ -147,6 +147,7 @@ watch(
         if (media.id !== video.value.id) {
             activated.value = false;
         }
+
         video.value = media;
         clearTimeout(timer);
         timer = setTimeout(poll, 5000);
