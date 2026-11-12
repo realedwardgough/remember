@@ -6,8 +6,10 @@ namespace App\Actions;
 
 use App\DTOs\CreateCommentDTO;
 use App\Models\Comment;
+use App\Models\ActivityNotification;
 use App\Models\Post;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 
 class CreateComment
 {
@@ -18,6 +20,17 @@ class CreateComment
             throw new AuthorizationException('Private letters cannot receive comments.');
         }
 
-        return $post->comments()->create($data->toArray());
+        return DB::transaction(function () use ($post, $data): Comment {
+            $comment = $post->comments()->create($data->toArray());
+
+            if ($post->author_id !== null && $post->author_id !== $data->authorId) {
+                ActivityNotification::query()->create([
+                    'user_id' => $post->author_id,
+                    'comment_id' => $comment->id,
+                ]);
+            }
+
+            return $comment;
+        });
     }
 }

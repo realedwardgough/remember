@@ -68,6 +68,14 @@
                         <Search :size="19" /> Search
                     </button>
                 </li>
+                <NavigationLink
+                    icon="fa-regular fa-bell"
+                    label="Notifications"
+                    :link="notificationIndex()"
+                    :active="currentPath === '/notifications'"
+                    :badge="page.props.unreadNotificationsCount"
+                    badge-label="notifications"
+                />
             </ul>
         </nav>
         <section v-if="tags.length" class="mt-7 hidden border-t pt-5 lg:block">
@@ -153,6 +161,7 @@ import type { CSSProperties } from 'vue';
 import MobileNavigationLink from '@/components/MobileNavigationLink.vue';
 import NavigationLink from '@/components/NavigationLink.vue';
 import { gallery, home, videos } from '@/routes';
+import { index as notificationIndex } from '@/routes/activity';
 import { index as messagesIndex } from '@/routes/messages';
 import { edit as profileEdit } from '@/routes/profile';
 import type { PageProps, TimelinePostType } from '@/types';

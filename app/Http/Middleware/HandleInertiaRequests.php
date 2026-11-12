@@ -11,6 +11,7 @@ use App\Models\Tag;
 use App\Models\Timeline;
 use App\Models\User;
 use App\Queries\GetUnreadMessageCount;
+use App\Queries\GetUnreadNotificationCount;
 use App\Services\Messaging\MessageImageSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -43,6 +44,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'unreadMessagesCount' => fn (): int => $request->user()
                 ? app(GetUnreadMessageCount::class)->handle($request->user()) : 0,
+            'unreadNotificationsCount' => fn (): int => $request->user()
+                ? app(GetUnreadNotificationCount::class)->handle($request->user()) : 0,
             'messagingRealtime' => fn (): array => $request->user()
                 ? config('remember.realtime') : ['enabled' => false],
             'messageImages' => fn (): array => $request->user()

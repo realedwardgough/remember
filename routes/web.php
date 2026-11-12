@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ActivityNotificationController;
 use App\Http\Controllers\CommentHeartController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\VideoGalleryController;
@@ -45,6 +46,11 @@ Route::middleware('guest')
     ->name(name: 'register.invite');
 
 Route::middleware('auth')->group(function (Router $router): void {
+    $router->prefix('notifications')->name('activity.')->middleware('cache.headers:private;no_store')->group(function (Router $router): void {
+        $router->get('/', [ActivityNotificationController::class, 'index'])->name('index');
+        $router->put('/read-all', [ActivityNotificationController::class, 'readAll'])->name('read-all');
+        $router->post('/{notification}/open', [ActivityNotificationController::class, 'open'])->whereNumber('notification')->name('open');
+    });
     $router->get('/profile/email/confirm', \App\Http\Controllers\ConfirmEmailChangeController::class)
         ->middleware(['signed', 'throttle:10,1,email.confirm'])->name('profile.email.confirm');
     $router->prefix('profile/security')->middleware(['password.confirm', 'cache.headers:private;no_store'])->group(function (Router $router): void {

@@ -17,7 +17,7 @@
             <span
                 v-if="badge"
                 class="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-white"
-                :aria-label="`${badge} unread messages`"
+                :aria-label="`${badge} unread ${badgeLabel ?? 'messages'}`"
                 >{{ badge > 99 ? '99+' : badge }}</span
             ></Link
         >
@@ -33,5 +33,6 @@ defineProps<{
     link: LinkComponentBaseProps['href'];
     active?: boolean;
     badge?: number;
+    badgeLabel?: string;
 }>();
 </script>

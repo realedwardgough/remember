@@ -96,7 +96,8 @@
                 :post="post"
                 :heart-processing="heartProcessing"
                 @toggle-heart="togglePostHeart()"
-                :allow-comments="post.type !== 'Event'"
+                :allow-comments="post.type !== 'Event' || detail"
+                :expanded="detail"
                 :comments-open="detail && isMobile ? true : undefined"
                 :open-post="!detail && isMobile ? postUrl : undefined"
             />

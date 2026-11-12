@@ -1,5 +1,5 @@
 <template>
-    <BaseLayout>
+    <BaseLayout hide-mobile-header>
         <template #sidebar
             ><Sidebar
                 :mobile-navigation-style="mobileNavigationStyle"
@@ -46,6 +46,7 @@
                             >
                         </h1>
                         <div class="flex items-center gap-1">
+                            <NotificationBell class="lg:hidden" />
                             <button
                                 type="button"
                                 class="button-primary px-3 py-2 lg:hidden"
@@ -275,6 +276,7 @@ import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue';
 import ConversationThread from '@/components/messaging/ConversationThread.vue';
 import NewConversationPicker from '@/components/messaging/NewConversationPicker.vue';
 import Modal from '@/components/Modal.vue';
+import NotificationBell from '@/components/NotificationBell.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';

@@ -87,6 +87,21 @@ Remember was created to help families preserve the moments that matter most. Rat
 - Intervention Image for media optimisation
 - Google Cloud Storage or a Laravel filesystem disk for uploaded media
 
+## In-app notifications
+
+New comments on a memory notify its author, excluding the author's own comments.
+The bell shows the unread count immediately on authenticated page loads, refreshes
+every 30 seconds, and refreshes when returning to the app. Notifications work
+without browser push permissions. Opening an item marks it read and links to the
+highlighted comment; opening the list leaves unread items unchanged. Read state
+is stored against the account across devices, and “Mark all as read” clears the
+account's unread activity. Message badges remain separate.
+
+Run `php artisan migrate` and `npm run build` when installing this update.
+Notifications start with new comments after installation; existing comments are
+not backfilled. Deleted comments and unavailable posts are excluded from the
+notification list and unread count.
+
 ## Requirements
 
 Before installing Remember, make sure the host has:

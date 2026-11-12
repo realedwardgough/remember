@@ -93,6 +93,7 @@ export interface Family {
 }
 
 export interface PageProps extends InertiaPageProps {
+    unreadNotificationsCount: number;
     unreadMessagesCount: number;
     messagingRealtime: RealtimeSettings;
     messageImages: {

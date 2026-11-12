@@ -43,6 +43,7 @@
                     }}
                 </p>
             </div>
+            <NotificationBell class="lg:hidden" />
             <button
                 type="button"
                 class="flex size-11 shrink-0 items-center justify-center rounded-xl text-stone-500 hover:bg-lilac"
@@ -316,6 +317,7 @@ import MessageComposer from '@/components/messaging/MessageComposer.vue';
 import MessagePhoto from '@/components/messaging/MessagePhoto.vue';
 import PhotoPreview from '@/components/messaging/PhotoPreview.vue';
 import SharedPostCard from '@/components/messaging/SharedPostCard.vue';
+import NotificationBell from '@/components/NotificationBell.vue';
 import { messageDraftsKey } from '@/composables/useMessageDrafts';
 import {
     conversationName,

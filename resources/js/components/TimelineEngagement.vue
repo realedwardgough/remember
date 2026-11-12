@@ -71,7 +71,9 @@
             <article
                 v-for="comment in visibleComments"
                 :key="comment.id"
-                class="min-w-0 border-b border-stone-100 py-2 lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-4"
+                :id="`comment-${comment.id}`"
+                tabindex="-1"
+                class="min-w-0 scroll-mt-20 border-b border-stone-100 py-2 target:rounded-xl target:bg-lilac target:px-3 target:ring-2 target:ring-primary lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-4"
             >
                 <div
                     class="flex items-center gap-2 text-xs text-zinc-600 lg:flex-wrap lg:gap-x-3 lg:gap-y-2"
@@ -145,11 +147,11 @@
                 :class="commentForm.processing ? 'opacity-60' : ''"
                 @submit.prevent="submitComment"
             >
-                <label class="sr-only" :for="`comment-${post.id}`"
+                <label class="sr-only" :for="`comment-input-${post.id}`"
                     >Add a comment</label
                 >
                 <textarea
-                    :id="`comment-${post.id}`"
+                    :id="`comment-input-${post.id}`"
                     v-model="commentForm.content"
                     name="content"
                     rows="2"
@@ -189,6 +191,7 @@ import type { PageProps, TimelinePost } from '@/types';
 const props = withDefaults(
     defineProps<{
         post: TimelinePost;
+        expanded?: boolean;
         heartProcessing?: boolean;
         openPost?: string;
         allowComments?: boolean;
@@ -278,7 +281,7 @@ const submitComment = () => {
 };
 
 const visibleComments = computed(() => {
-    if (showAllComments.value) {
+    if (props.expanded || showAllComments.value) {
         return props.post.comments;
     }
 

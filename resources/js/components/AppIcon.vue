@@ -9,6 +9,7 @@
 <script setup lang="ts">
 import {
     ArrowRight,
+    Bell,
     CalendarDays,
     CheckCircle2,
     Download,
@@ -35,6 +36,7 @@ const props = withDefaults(defineProps<{ name: string; size?: number }>(), {
     size: 18,
 });
 const icons = {
+    'fa-bell': Bell,
     'fa-house': House,
     'fa-camera-retro': Image,
     'fa-image': Image,
