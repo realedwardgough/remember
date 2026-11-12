@@ -17,7 +17,7 @@ class GetTimelinePosts
     /** @return array<string, mixed> */
     public function handle(User $viewer, TimelineFiltersDTO $filters, int $page): array
     {
-        $key = 'timeline-v2-'.md5(serialize(['filters' => $filters->toArray(), 'page' => $page, 'viewer' => $viewer->id]));
+        $key = 'timeline-v3-'.md5(serialize(['filters' => $filters->toArray(), 'page' => $page, 'viewer' => $viewer->id]));
         $pagination = Cache::tags(['posts'])->remember(
             key: $key.'-ids',
             ttl: 300,
@@ -62,11 +62,8 @@ class GetTimelinePosts
         $posts = Post::query()
             ->with([
                 'author', 'media', 'tags',
-                'comments' => fn ($query) => $query->with('author')->withCount('hearts')->withExists([
-                    'hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id),
-                ]),
             ])
-            ->withCount('hearts')
+            ->withCount(['hearts', 'comments'])
             ->withExists(['hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id)])
             ->visibleTo($viewer)
             ->whereKey($ids)->get()->keyBy('id');

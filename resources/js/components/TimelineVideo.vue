@@ -1,5 +1,8 @@
 <template>
-    <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+    <div
+        ref="container"
+        class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+    >
         <button
             v-if="
                 preview ||
@@ -68,7 +71,7 @@
 
 <script setup lang="ts">
 import { Play, Video } from 'lucide-vue-next';
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import type { TimelineMedia } from '@/types';
 
@@ -86,6 +89,10 @@ const emit = defineEmits<{
 const video = ref(props.media);
 const activated = ref(false);
 const statusUnavailable = ref(false);
+const container = ref<HTMLElement | null>(null);
+const inViewport = ref(false);
+let observer: IntersectionObserver | undefined;
+let inFlight = false;
 
 const openVideo = () => {
     if (props.preview) {
@@ -98,9 +105,30 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let controller: AbortController | undefined;
 let stopped = false;
 
+const active = () =>
+    !stopped && inViewport.value && document.visibilityState === 'visible';
+const schedule = (delay = 5000) => {
+    clearTimeout(timer);
+
+    if (active() && !inFlight) {
+        timer = setTimeout(poll, delay);
+    }
+};
+const pause = () => {
+    clearTimeout(timer);
+    controller?.abort();
+};
+const visibilityChanged = () => {
+    if (active()) {
+        schedule(0);
+    } else {
+        pause();
+    }
+};
 const poll = async () => {
     if (
-        stopped ||
+        !active() ||
+        inFlight ||
         !video.value.statusUrl ||
         (!['pending', 'processing'].includes(video.value.status ?? '') &&
             (video.value.thumbnailUrl ||
@@ -111,6 +139,7 @@ const poll = async () => {
         return;
     }
 
+    inFlight = true;
     controller = new AbortController();
 
     try {
@@ -129,15 +158,22 @@ const poll = async () => {
             throw new Error('Status unavailable');
         }
 
-        video.value = await response.json();
+        const updated: TimelineMedia = await response.json();
+
+        if (controller.signal.aborted || stopped) {
+            return;
+        }
+
+        video.value = updated;
         emit('updated', video.value);
         statusUnavailable.value = false;
     } catch {
-        statusUnavailable.value = true;
-    }
-
-    if (!stopped) {
-        timer = setTimeout(poll, 5000);
+        if (!controller.signal.aborted) {
+            statusUnavailable.value = true;
+        }
+    } finally {
+        inFlight = false;
+        schedule();
     }
 };
 
@@ -146,17 +182,36 @@ watch(
     (media) => {
         if (media.id !== video.value.id) {
             activated.value = false;
+            controller?.abort();
+            stopped = false;
         }
 
         video.value = media;
-        clearTimeout(timer);
-        timer = setTimeout(poll, 5000);
+        schedule();
     },
     { immediate: true },
 );
+onMounted(() => {
+    document.addEventListener('visibilitychange', visibilityChanged);
+
+    if (typeof IntersectionObserver === 'undefined') {
+        inViewport.value = true;
+        schedule();
+    } else {
+        observer = new IntersectionObserver((entries) => {
+            inViewport.value = entries.some((entry) => entry.isIntersecting);
+            visibilityChanged();
+        });
+
+        if (container.value) {
+            observer.observe(container.value);
+        }
+    }
+});
 onBeforeUnmount(() => {
     stopped = true;
-    clearTimeout(timer);
-    controller?.abort();
+    pause();
+    observer?.disconnect();
+    document.removeEventListener('visibilitychange', visibilityChanged);
 });
 </script>

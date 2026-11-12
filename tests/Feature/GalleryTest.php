@@ -48,14 +48,14 @@ class GalleryTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page): Assert => $page
                 ->component('Gallery')
-                ->has('images', 1)
-                ->where('images.0.name', 'birthday.jpg')
-                ->where('images.0.mimeType', 'image/jpeg')
-                ->where('images.0.width', 1200)
-                ->where('images.0.height', 800)
-                ->where('images.0.postId', $post->id)
-                ->where('images.0.postTitle', 'First birthday photos')
-                ->where('images.0.postDate', '12 April 2026')
+                ->has('images.data', 1)
+                ->where('images.data.0.name', 'birthday.jpg')
+                ->where('images.data.0.mimeType', 'image/jpeg')
+                ->where('images.data.0.width', 1200)
+                ->where('images.data.0.height', 800)
+                ->where('images.data.0.postId', $post->id)
+                ->where('images.data.0.postTitle', 'First birthday photos')
+                ->where('images.data.0.postDate', '12 April 2026')
                 ->where('filters.search', '')
                 ->where('filters.tag', '')
                 ->where('filters.type', '')
@@ -88,7 +88,7 @@ class GalleryTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page): Assert => $page
                 ->component('Gallery')
-                ->has('images', 0)
+                ->has('images.data', 0)
                 ->where('media_count', 0)
                 ->where('memories_count', 0));
 

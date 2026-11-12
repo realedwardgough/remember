@@ -104,9 +104,9 @@ test('the bell uses the initial server count and reacts to later read updates', 
     assert.equal(state.count.value, 0);
 });
 
-test('post detail renders every comment so a notification can reach comments beyond the feed preview', () => {
+test('comments stay closed in the feed and open on the post detail', () => {
     const comments = Array.from({ length: 8 }, (_, id) => ({ id: id + 1 }));
-    const props = vue.reactive({ post: { id: 1, comments }, expanded: false });
+    const props = vue.reactive({ post: { id: 1, comments }, expanded: false, allowComments: true, showComments: true });
     const component = loadComponent('components/TimelineEngagement.vue', {
         '@inertiajs/vue3': {
             usePage: () => ({ props: { filters: { author: '' } } }),
@@ -114,9 +114,9 @@ test('post detail renders every comment so a notification can reach comments bey
         },
     });
     const state = component.setup(props, { expose() {}, emit() {} });
-    assert.equal(state.visibleComments.value.length, 3);
+    assert.equal(state.discussionOpen.value, false);
     props.expanded = true;
-    assert.equal(state.visibleComments.value.length, 8);
-    assert.equal(state.visibleComments.value[7].id, 8);
-    assert.equal(state.hiddenCommentCount.value, 0);
+    assert.equal(state.discussionOpen.value, true);
+    assert.equal(state.loadedComments.value.length, 8);
+    assert.equal(state.loadedComments.value[7].id, 8);
 });

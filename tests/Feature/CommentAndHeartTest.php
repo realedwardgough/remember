@@ -109,7 +109,7 @@ class CommentAndHeartTest extends TestCase
     }
 
     #[Test]
-    public function home_feed_includes_comments_and_heart_state(): void
+    public function home_feed_includes_comment_counts_without_loading_comments(): void
     {
         $viewer = User::factory()->create(['username' => 'viewer']);
         $commenter = User::factory()->create(['username' => 'author-one']);
@@ -154,11 +154,8 @@ class CommentAndHeartTest extends TestCase
                 ->where('timelinePosts.data.0.heartsCount', 1)
                 ->where('timelinePosts.data.0.heartedByViewer', true)
                 ->where('timelinePosts.data.0.commentsCount', 4)
-                ->has('timelinePosts.data.0.comments', 4)
-                ->where('timelinePosts.data.0.comments.0.content', 'Comment 1')
-                ->where('timelinePosts.data.0.comments.0.author', 'author-one')
-                ->where('timelinePosts.data.0.comments.0.heartsCount', 2)
-                ->where('timelinePosts.data.0.comments.0.heartedByViewer', true)
+                ->has('timelinePosts.data.0.comments', 0)
+                ->where('timelinePosts.data.0.commentsUrl', route('posts.comments.index', $post, false))
             );
     }
 

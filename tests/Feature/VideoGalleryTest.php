@@ -44,19 +44,19 @@ class VideoGalleryTest extends TestCase
 
         $this->actingAs($user)->get(route('videos'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Videos')
-                ->has('videos', 2)
-                ->where('videos.0.id', $processing->id)
-                ->where('videos.0.status', 'processing')
-                ->where('videos.0.statusUrl', route('media.status', $processing, false))
-                ->where('videos.1.id', $ready->id)
-                ->where('videos.1.name', 'steps.mp4')
-                ->where('videos.1.mimeType', 'video/mp4')
-                ->where('videos.1.status', 'ready')
-                ->where('videos.1.url', route('media.show', $ready, false))
-                ->where('videos.1.downloadUrl', route('media.download', $ready, false))
-                ->where('videos.1.postId', $post->id)
-                ->where('videos.1.postTitle', 'First steps')
-                ->where('videos.1.postDate', '1 November 2026'));
+                ->has('videos.data', 2)
+                ->where('videos.data.0.id', $processing->id)
+                ->where('videos.data.0.status', 'processing')
+                ->where('videos.data.0.statusUrl', route('media.status', $processing, false))
+                ->where('videos.data.1.id', $ready->id)
+                ->where('videos.data.1.name', 'steps.mp4')
+                ->where('videos.data.1.mimeType', 'video/mp4')
+                ->where('videos.data.1.status', 'ready')
+                ->where('videos.data.1.url', route('media.show', $ready, false))
+                ->where('videos.data.1.downloadUrl', route('media.download', $ready, false))
+                ->where('videos.data.1.postId', $post->id)
+                ->where('videos.data.1.postTitle', 'First steps')
+                ->where('videos.data.1.postDate', '1 November 2026'));
     }
 
     #[Test]
@@ -71,10 +71,10 @@ class VideoGalleryTest extends TestCase
         $deleted->delete();
 
         $this->actingAs($viewer)->get(route('videos'))->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Videos')->has('videos', 0));
+            ->assertInertia(fn (Assert $page) => $page->component('Videos')->has('videos.data', 0));
         $this->actingAs($author)->get(route('videos'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Videos')
-                ->has('videos', 1)->where('videos.0.id', $video->id));
+                ->has('videos.data', 1)->where('videos.data.0.id', $video->id));
     }
 
     #[Test]
@@ -82,6 +82,6 @@ class VideoGalleryTest extends TestCase
     {
         $this->get(route('videos'))->assertRedirect(route('login'));
         $this->actingAs(User::factory()->create())->get(route('videos'))->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Videos')->has('videos', 0));
+            ->assertInertia(fn (Assert $page) => $page->component('Videos')->has('videos.data', 0));
     }
 }

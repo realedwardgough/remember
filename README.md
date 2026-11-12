@@ -290,6 +290,17 @@ conversion. Private JPEG previews appear in the videos gallery and as posters on
 posts. The gallery opens a video player when a preview is tapped. Thumbnail failures
 do not prevent video playback; inspect and retry failed jobs as above.
 
+Photo and video galleries load 24 items at a time using infinite scrolling. Opening
+an attachment loads its post's other attachments separately, so viewer navigation
+still works across gallery page boundaries. Processing status is polled only while
+the video card is on screen and the browser tab is visible.
+
+Feed and post responses include comment counts without comment bodies. Opening
+the discussion fetches 20 comments at a time; notification links fetch the page
+containing their target comment. GCS video playback requests byte ranges directly
+from storage rather than downloading preceding bytes to seek. These changes require
+no server configuration changes, database migrations, or additional photo variants.
+
 After deploying thumbnail support, restart workers and queue previews for existing
 videos (this does not compress or replace the videos):
 

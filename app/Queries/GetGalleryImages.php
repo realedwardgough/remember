@@ -7,19 +7,19 @@ namespace App\Queries;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetGalleryImages
 {
-    /** @return list<array<string, int|string|null>> */
-    public function handle(User $viewer): array
+    public function handle(User $viewer, int $page = 1): LengthAwarePaginator
     {
         return Media::query()
             ->with('post:id,title,published_at')
             ->whereHas('post', fn (Builder $query): Builder => $query->visibleTo($viewer))
             ->where('mime_type', 'like', 'image/%')
-            ->latest()
-            ->get()
-            ->map(fn (Media $media): array => [
+            ->latest()->orderByDesc('id')
+            ->paginate(perPage: 24, page: $page)
+            ->through(fn (Media $media): array => [
                 'id' => $media->id,
                 'name' => $media->original_name ?? basename($media->path),
                 'url' => route('media.show', $media, false),
@@ -31,6 +31,6 @@ class GetGalleryImages
                 'postId' => $media->post_id,
                 'postTitle' => $media->post?->title,
                 'postDate' => $media->post?->published_at?->format('j F Y'),
-            ])->all();
+            ]);
     }
 }

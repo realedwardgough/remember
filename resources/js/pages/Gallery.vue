@@ -13,8 +13,8 @@
             <header class="flex items-center justify-between gap-3 lg:hidden">
                 <h1 class="text-lg font-semibold">Photos</h1>
                 <span class="text-xs text-stone-500"
-                    >{{ images.length }}
-                    {{ images.length === 1 ? 'photo' : 'photos' }}</span
+                    >{{ images.total }}
+                    {{ images.total === 1 ? 'photo' : 'photos' }}</span
                 >
             </header>
             <PageHeader
@@ -25,13 +25,13 @@
             >
                 <span
                     class="rounded-full bg-mint px-4 py-2 text-sm text-stone-600"
-                    >{{ images.length }}
-                    {{ images.length === 1 ? 'photo' : 'photos' }}</span
+                    >{{ images.total }}
+                    {{ images.total === 1 ? 'photo' : 'photos' }}</span
                 >
             </PageHeader>
 
             <div
-                v-if="images.length === 0"
+                v-if="images.total === 0"
                 class="rounded-xl border border-stone-200 bg-white p-7 text-center sm:p-10"
             >
                 <div
@@ -63,12 +63,13 @@
                 </button>
             </div>
 
-            <div
+            <InfiniteScroll
                 v-else
+                data="images"
                 class="-mx-4 grid grid-cols-2 items-stretch gap-px sm:-mx-8 lg:mx-0 lg:gap-3 xl:grid-cols-3"
             >
                 <article
-                    v-for="image in images"
+                    v-for="image in images.data"
                     :key="image.id"
                     class="group min-w-0 lg:flex lg:h-full lg:flex-col lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-2 lg:transition lg:duration-200 lg:hover:-translate-y-1"
                 >
@@ -76,7 +77,7 @@
                         type="button"
                         :aria-label="`Open photo: ${image.postTitle || image.name}`"
                         class="block w-full cursor-zoom-in focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
-                        @click="selectedImage = image"
+                        @click="openImage(image)"
                     >
                         <div
                             class="relative aspect-square overflow-hidden bg-canvas lg:rounded-xl lg:border lg:border-stone-200"
@@ -127,7 +128,15 @@
                         </div>
                     </div>
                 </article>
-            </div>
+                <template #loading>
+                    <p
+                        class="col-span-full p-4 text-center text-sm text-stone-500"
+                        role="status"
+                    >
+                        Loading photos…
+                    </p>
+                </template>
+            </InfiniteScroll>
         </section>
 
         <ImageViewer
@@ -135,6 +144,7 @@
             :images="selectedPostImages"
             :title="selectedImage?.postTitle"
             :subtitle="selectedImage?.postDate"
+            :notice="mediaError"
             @select="selectImage"
             @close="selectedImage = null"
         />
@@ -161,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, InfiniteScroll } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import ImageViewer from '@/components/ImageViewer.vue';
@@ -170,22 +180,33 @@ import PageHeader from '@/components/PageHeader.vue';
 import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
+import { usePostMedia } from '@/composables/usePostMedia';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import type { GalleryImage, ImageViewerMedia } from '@/types';
+import type { GalleryImage, ImageViewerMedia, PaginatedGallery } from '@/types';
 
 type ActiveModal = 'post' | 'search' | null;
 
 const props = defineProps<{
-    images: GalleryImage[];
+    images: PaginatedGallery<GalleryImage>;
 }>();
 
 const activeModal = ref<ActiveModal>(null);
 const selectedImage = ref<GalleryImage | null>(null);
 
+const {
+    load: loadPostMedia,
+    media: postMedia,
+    error: mediaError,
+} = usePostMedia<GalleryImage>('image');
+const openImage = (image: GalleryImage) => {
+    selectedImage.value = image;
+    void loadPostMedia(image);
+};
 const selectedPostImages = computed(() =>
-    props.images.filter(
-        (image) => image.postId === selectedImage.value?.postId,
-    ),
+    (postMedia.value && postMedia.value.postId === selectedImage.value?.postId
+        ? postMedia.value.items
+        : props.images.data
+    ).filter((image) => image.postId === selectedImage.value?.postId),
 );
 const selectImage = (image: ImageViewerMedia) => {
     selectedImage.value =

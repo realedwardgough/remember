@@ -40,6 +40,11 @@ export type GalleryVideo = TimelineMedia & {
     postDate: string | null;
 };
 
+export type PaginatedGallery<T> = {
+    data: T[];
+    total: number;
+};
+
 export type TimelinePostType = 'Memory' | 'Milestone' | 'Event' | 'Letter';
 
 export type TimelineFilters = {
@@ -73,6 +78,7 @@ export type TimelinePost = {
     videos?: TimelineMedia[];
     tags: string[];
     comments: TimelineComment[];
+    commentsUrl?: string;
     commentsCount: number;
     heartsCount: number;
     heartedByViewer: boolean;

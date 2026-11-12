@@ -37,8 +37,10 @@ class TimelineResource extends JsonResource
                 ->map(fn (Media $media): array => MediaResource::make($media)->toArray($request))
                 ->all(),
             'tags' => $this->resource->tags->map(fn ($tag): string => '#'.$tag->name)->all(),
-            'comments' => CommentResource::collection($this->resource->comments)->resolve($request),
-            'commentsCount' => $this->resource->comments->count(),
+            'comments' => $this->resource->relationLoaded('comments')
+                ? CommentResource::collection($this->resource->comments)->resolve($request) : [],
+            'commentsCount' => $this->resource->comments_count ?? ($this->resource->relationLoaded('comments') ? $this->resource->comments->count() : 0),
+            'commentsUrl' => route('posts.comments.index', $this->resource, false),
             'heartsCount' => $this->resource->hearts_count,
             'heartedByViewer' => (bool) $this->resource->hearted_by_viewer,
             'canEdit' => $request->user()->id === $this->resource->author_id,

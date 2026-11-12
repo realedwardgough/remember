@@ -44,7 +44,7 @@
                     @click="toggleCommentForm"
                 >
                     <AppIcon name="fa-solid fa-comment" />
-                    <span>{{ post.commentsCount }}</span>
+                    <span>{{ commentTotal }}</span>
                 </button>
             </div>
         </div>
@@ -52,8 +52,8 @@
         <div
             v-if="
                 allowComments &&
-                showComments &&
-                (post.commentsCount > 0 || isCommentFormShown)
+                discussionOpen &&
+                (commentTotal > 0 || isCommentFormShown)
             "
             class="grid gap-0 border-t border-stone-200 pt-2 lg:mt-6 lg:gap-4 lg:pt-5 lg:pb-3"
         >
@@ -64,12 +64,43 @@
                 <span
                     class="text-xs font-semibold text-stone-500 lg:rounded-xl lg:border lg:border-stone-200 lg:bg-butter lg:px-2 lg:py-0.5 lg:text-inherit"
                 >
-                    {{ post.commentsCount }}
+                    {{ commentTotal }}
                 </span>
             </div>
 
+            <p
+                v-if="commentsLoading"
+                role="status"
+                class="py-2 text-sm text-stone-500"
+            >
+                Loading comments…
+            </p>
+            <div
+                v-if="commentsError"
+                role="alert"
+                class="py-2 text-sm text-red-700"
+            >
+                {{ commentsError }}
+                <button
+                    type="button"
+                    class="ml-2 underline"
+                    @click="loadComments()"
+                >
+                    Retry
+                </button>
+            </div>
+            <button
+                v-if="previousPage !== null"
+                type="button"
+                class="button-secondary justify-self-start"
+                :disabled="commentsLoading"
+                @click="loadComments(previousPage, 'before')"
+            >
+                Load earlier comments
+            </button>
+
             <article
-                v-for="comment in visibleComments"
+                v-for="comment in loadedComments"
                 :key="comment.id"
                 :id="`comment-${comment.id}`"
                 tabindex="-1"
@@ -131,13 +162,13 @@
             </article>
 
             <button
-                v-if="hiddenCommentCount > 0"
+                v-if="nextPage !== null"
                 type="button"
-                class="min-h-11 w-fit cursor-pointer rounded-xl px-2 py-1.5 text-sm font-semibold text-primary hover:underline lg:min-h-0 lg:border lg:border-stone-200 lg:bg-white lg:px-3 lg:text-zinc-700 lg:hover:bg-butter"
-                @click="showAllComments = true"
+                class="button-secondary justify-self-start"
+                :disabled="commentsLoading"
+                @click="loadComments(nextPage, 'after')"
             >
-                Show {{ hiddenCommentCount }} more
-                {{ hiddenCommentCount === 1 ? 'comment' : 'comments' }}
+                Load more comments
             </button>
 
             <form
@@ -181,12 +212,19 @@
 <script setup lang="ts">
 import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Heart } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import { store as storeComment } from '@/actions/App/Http/Controllers/CommentController';
 import { toggle as toggleCommentHeartRoute } from '@/actions/App/Http/Controllers/CommentHeartController';
 import AppIcon from '@/components/AppIcon.vue';
 import { home } from '@/routes';
-import type { PageProps, TimelinePost } from '@/types';
+import type { PageProps, TimelineComment, TimelinePost } from '@/types';
 
 const props = withDefaults(
     defineProps<{
@@ -230,7 +268,6 @@ const emit = defineEmits<{
     toggleHeart: [];
 }>();
 
-const showAllComments = ref(false);
 const internalShowCommentForm = ref(false);
 const commentHeartProcessing = ref<number | null>(null);
 const commentForm = useForm({
@@ -264,6 +301,9 @@ const toggleCommentHeart = (commentId: number) => {
         onStart: () => {
             commentHeartProcessing.value = commentId;
         },
+        onSuccess: () => {
+            void loadComments(1, 'refresh', commentId);
+        },
         onFinish: () => {
             commentHeartProcessing.value = null;
         },
@@ -280,19 +320,130 @@ const submitComment = () => {
     });
 };
 
-const visibleComments = computed(() => {
-    if (props.expanded || showAllComments.value) {
-        return props.post.comments;
+const loadedComments = ref<TimelineComment[]>(props.post.comments ?? []);
+const commentTotal = ref(props.post.commentsCount);
+const commentsLoading = ref(false);
+const commentsError = ref('');
+const commentsLoaded = ref(false);
+const previousPage = ref<number | null>(null);
+const nextPage = ref<number | null>(null);
+const discussionOpen = computed(
+    () =>
+        props.allowComments &&
+        props.showComments &&
+        (props.expanded || isCommentFormShown.value),
+);
+let mounted = false;
+let generation = 0;
+let controller: AbortController | undefined;
+
+type CommentPage = {
+    data: TimelineComment[];
+    total: number;
+    previous_page: number | null;
+    next_page: number | null;
+};
+const loadComments = async (
+    pageNumber = 1,
+    mode: 'replace' | 'before' | 'after' | 'refresh' = 'replace',
+    focusId?: number,
+) => {
+    if (!mounted || !discussionOpen.value || !props.post.commentsUrl) {
+        return;
     }
 
-    return props.post.comments.slice(0, 3);
-});
+    controller?.abort();
+    controller = new AbortController();
+    const requestController = controller;
+    const current = ++generation;
+    commentsLoading.value = true;
+    commentsError.value = '';
+    const query = focusId ? `focus_id=${focusId}` : `page=${pageNumber}`;
 
-const hiddenCommentCount = computed(() => {
-    return Math.max(
-        props.post.comments.length - visibleComments.value.length,
-        0,
-    );
+    try {
+        const response = await fetch(`${props.post.commentsUrl}?${query}`, {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+            signal: requestController.signal,
+        });
+
+        if (!response.ok) {
+            throw new Error('Comments unavailable');
+        }
+
+        const result: CommentPage = await response.json();
+
+        if (current !== generation || requestController.signal.aborted) {
+            return;
+        }
+
+        const items =
+            mode === 'replace'
+                ? result.data
+                : [...loadedComments.value, ...result.data];
+        loadedComments.value = [
+            ...new Map(items.map((comment) => [comment.id, comment])).values(),
+        ].sort((a, b) => a.id - b.id);
+        commentTotal.value = result.total;
+        commentsLoaded.value = true;
+
+        if (mode === 'replace' || mode === 'before') {
+            previousPage.value = result.previous_page;
+        }
+
+        if (mode === 'replace' || mode === 'after') {
+            nextPage.value = result.next_page;
+        }
+
+        if (focusId && mode === 'replace') {
+            await nextTick();
+            document
+                .getElementById(`comment-${focusId}`)
+                ?.scrollIntoView({ block: 'center' });
+        }
+    } catch {
+        if (current === generation && !requestController.signal.aborted) {
+            commentsError.value = 'Comments could not be loaded.';
+        }
+    } finally {
+        if (current === generation) {
+            commentsLoading.value = false;
+        }
+    }
+};
+const openComments = () => {
+    if (mounted && discussionOpen.value && !commentsLoaded.value) {
+        const anchor = /^#comment-(\d+)$/.exec(window.location.hash);
+        void loadComments(1, 'replace', anchor ? Number(anchor[1]) : undefined);
+    }
+};
+watch(discussionOpen, (open) => {
+    if (open) {
+        openComments();
+    } else {
+        generation++;
+        controller?.abort();
+        commentsLoading.value = false;
+    }
+});
+watch(
+    () => props.post.commentsCount,
+    (count) => {
+        commentTotal.value = count;
+        commentsLoaded.value = false;
+
+        if (discussionOpen.value) {
+            void loadComments(Math.max(1, Math.ceil(count / 20)));
+        }
+    },
+);
+onMounted(() => {
+    mounted = true;
+    openComments();
+});
+onBeforeUnmount(() => {
+    generation++;
+    controller?.abort();
 });
 
 const userInitials = (name: string) => {

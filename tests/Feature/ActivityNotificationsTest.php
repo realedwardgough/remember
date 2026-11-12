@@ -100,7 +100,7 @@ class ActivityNotificationsTest extends TestCase
         $this->assertTrue($activity->fresh()->read_at->equalTo($readAt));
         $this->get(route('home'))->assertInertia(fn (Assert $page) => $page->where('unreadNotificationsCount', 1));
         $this->get(route('posts.show', $post))->assertInertia(fn (Assert $page) => $page
-            ->has('post.comments', 2));
+            ->has('post.comments', 0)->where('post.commentsCount', 2));
     }
 
     #[Test]

@@ -103,6 +103,8 @@ Route::middleware('auth')->group(function (Router $router): void {
     $router->delete(uri: '/timeline/users/{user}', action: [TimelineUserController::class, 'destroy'])->name(name: 'timeline.users.destroy');
     $router->post(uri: '/posts', action: [PostController::class, 'store'])->middleware('throttle:10,1,posts.store')->name(name: 'posts.store');
     $router->get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    $router->get('/api/posts/{post}/media', \App\Http\Controllers\PostMediaController::class)->name('posts.media');
+    $router->get('/api/posts/{post}/comments', [CommentController::class, 'index'])->name('posts.comments.index');
     $router->get(uri: '/posts/{post}/edit', action: [PostController::class, 'edit'])->name(name: 'posts.edit');
     $router->patch(uri: '/posts/{post}', action: [PostController::class, 'update'])->name(name: 'posts.update');
     $router->delete(uri: '/posts/{post}', action: [PostController::class, 'destroy'])->name(name: 'posts.destroy');

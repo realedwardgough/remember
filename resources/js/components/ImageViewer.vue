@@ -14,6 +14,13 @@
                 <DialogTitle class="sr-only">{{
                     title || image?.name || 'Photo'
                 }}</DialogTitle>
+                <p
+                    v-if="notice"
+                    role="alert"
+                    class="absolute inset-x-4 top-20 z-10 rounded-xl bg-black/70 p-3 text-sm"
+                >
+                    {{ notice }}
+                </p>
                 <div
                     class="flex h-full w-full touch-pan-y touch-pinch-zoom items-center justify-center"
                     @touchstart.passive="startSwipe"
@@ -87,6 +94,9 @@
         @close="emit('close')"
     >
         <div v-if="image" class="grid gap-4">
+            <p v-if="notice" role="alert" class="text-sm text-stone-600">
+                {{ notice }}
+            </p>
             <div
                 class="touch-pan-y touch-pinch-zoom"
                 @touchstart.passive="startSwipe"
@@ -166,6 +176,7 @@ const props = defineProps<{
     images?: ImageViewerMedia[];
     title?: string | null;
     subtitle?: string | null;
+    notice?: string;
 }>();
 const images = computed(
     () => props.images ?? (props.image ? [props.image] : []),

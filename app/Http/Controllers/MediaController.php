@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Media;
 use App\Http\Resources\MediaResource;
 use App\Services\Posts\LocalMediaCache;
+use App\Services\Posts\VideoStream;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -136,20 +137,8 @@ class MediaController extends Controller
         }
 
         return response()->stream(function () use ($media, $start, $end): void {
-            $stream = Storage::disk($media->disk)->readStream($media->path);
-            abort_unless(is_resource($stream), 404);
+            $stream = app(VideoStream::class)->open($media, $start, $end);
             try {
-                // GCS streams may not be seekable. Discard in bounded chunks in that case.
-                if ($start > 0 && (! stream_get_meta_data($stream)['seekable'] || fseek($stream, $start) !== 0)) {
-                    $skip = $start;
-                    while ($skip > 0 && ! feof($stream)) {
-                        $chunk = fread($stream, min(65536, $skip));
-                        if ($chunk === false || $chunk === '') {
-                            break;
-                        }
-                        $skip -= strlen($chunk);
-                    }
-                }
                 $remaining = $end - $start + 1;
                 while ($remaining > 0 && ! feof($stream)) {
                     $chunk = fread($stream, min(65536, $remaining));

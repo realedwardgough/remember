@@ -15,10 +15,7 @@ class GetTimelinePost
         return Post::query()->visibleTo($viewer)->whereKey($postId)
             ->with([
                 'author', 'media', 'tags',
-                'comments' => fn ($query) => $query->with('author')->withCount('hearts')->withExists([
-                    'hearts as hearted_by_viewer' => fn (Builder $query) => $query->where('user_id', $viewer->id),
-                ]),
-            ])->withCount('hearts')
+            ])->withCount(['hearts', 'comments'])
             ->withExists(['hearts as hearted_by_viewer' => fn (Builder $query) => $query->where('user_id', $viewer->id)])
             ->firstOrFail();
     }

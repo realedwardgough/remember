@@ -13,8 +13,8 @@
             <header class="flex items-center justify-between gap-3 lg:hidden">
                 <h1 class="text-lg font-semibold">Videos</h1>
                 <span class="text-xs text-stone-500"
-                    >{{ videos.length }}
-                    {{ videos.length === 1 ? 'video' : 'videos' }}</span
+                    >{{ videos.total }}
+                    {{ videos.total === 1 ? 'video' : 'videos' }}</span
                 >
             </header>
             <PageHeader
@@ -25,13 +25,13 @@
             >
                 <span
                     class="rounded-full bg-mint px-4 py-2 text-sm text-stone-600"
-                    >{{ videos.length }}
-                    {{ videos.length === 1 ? 'video' : 'videos' }}</span
+                    >{{ videos.total }}
+                    {{ videos.total === 1 ? 'video' : 'videos' }}</span
                 >
             </PageHeader>
 
             <div
-                v-if="videos.length === 0"
+                v-if="videos.total === 0"
                 class="rounded-xl border border-stone-200 bg-white p-7 text-center sm:p-10"
             >
                 <div
@@ -63,19 +63,20 @@
                 </button>
             </div>
 
-            <div
+            <InfiniteScroll
                 v-else
+                data="videos"
                 class="-mx-4 grid grid-cols-2 items-stretch gap-px sm:-mx-8 lg:mx-0 lg:gap-3 xl:grid-cols-3"
             >
                 <article
-                    v-for="video in videos"
+                    v-for="video in videoItems"
                     :key="video.id"
                     class="flex min-w-0 flex-col lg:rounded-xl lg:border lg:border-stone-200 lg:bg-white lg:p-2"
                 >
                     <TimelineVideo
                         :media="video"
                         preview
-                        @open="selectedVideoId = video.id"
+                        @open="openVideo(video)"
                         @updated="updateVideo"
                     />
 
@@ -112,7 +113,15 @@
                         </div>
                     </div>
                 </article>
-            </div>
+                <template #loading>
+                    <p
+                        class="col-span-full p-4 text-center text-sm text-stone-500"
+                        role="status"
+                    >
+                        Loading videos…
+                    </p>
+                </template>
+            </InfiniteScroll>
         </section>
 
         <Modal
@@ -124,6 +133,13 @@
             @close="selectedVideoId = null"
         >
             <div v-if="selectedVideo" class="grid gap-4">
+                <p
+                    v-if="mediaError"
+                    role="alert"
+                    class="text-sm text-stone-600"
+                >
+                    {{ mediaError }}
+                </p>
                 <TimelineVideo
                     :key="selectedVideo.id"
                     :media="selectedVideo"
@@ -198,7 +214,7 @@
 </template>
 
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, InfiniteScroll } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import Modal from '@/components/Modal.vue';
@@ -207,27 +223,39 @@ import PostForm from '@/components/PostForm.vue';
 import Search from '@/components/Search.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import TimelineVideo from '@/components/TimelineVideo.vue';
+import { usePostMedia } from '@/composables/usePostMedia';
 import BaseLayout from '@/layouts/BaseLayout.vue';
-import type { GalleryVideo, TimelineMedia } from '@/types';
+import type { GalleryVideo, TimelineMedia, PaginatedGallery } from '@/types';
 
 type ActiveModal = 'post' | 'search' | null;
 
 const props = defineProps<{
-    videos: GalleryVideo[];
+    videos: PaginatedGallery<GalleryVideo>;
 }>();
 
 const activeModal = ref<ActiveModal>(null);
-const videos = ref(props.videos.map((video) => ({ ...video })));
+const videoItems = ref(props.videos.data.map((video) => ({ ...video })));
+const {
+    load: loadPostMedia,
+    media: postMedia,
+    error: mediaError,
+} = usePostMedia<GalleryVideo>('video');
+const openVideo = (video: GalleryVideo) => {
+    selectedVideoId.value = video.id;
+    void loadPostMedia(video);
+};
 const selectedVideoId = ref<number | null>(null);
 const selectedVideo = computed(
     () =>
-        videos.value.find((video) => video.id === selectedVideoId.value) ??
-        null,
+        [...videoItems.value, ...(postMedia.value?.items ?? [])].find(
+            (video) => video.id === selectedVideoId.value,
+        ) ?? null,
 );
 const selectedPostVideos = computed(() =>
-    videos.value.filter(
-        (video) => video.postId === selectedVideo.value?.postId,
-    ),
+    (postMedia.value && postMedia.value.postId === selectedVideo.value?.postId
+        ? postMedia.value.items
+        : videoItems.value
+    ).filter((video) => video.postId === selectedVideo.value?.postId),
 );
 const selectedIndex = computed(() =>
     selectedPostVideos.value.findIndex(
@@ -242,16 +270,19 @@ const navigateVideo = (direction: number) => {
     }
 };
 watch(
-    () => props.videos,
+    () => props.videos.data,
     (value) => {
-        videos.value = value.map((video) => ({ ...video }));
+        videoItems.value = value.map((video) => ({ ...video }));
     },
 );
 const updateVideo = (media: TimelineMedia) => {
-    const video = videos.value.find((candidate) => candidate.id === media.id);
-
-    if (video) {
-        Object.assign(video, media);
+    for (const video of [
+        ...videoItems.value,
+        ...(postMedia.value?.items ?? []),
+    ]) {
+        if (video.id === media.id) {
+            Object.assign(video, media);
+        }
     }
 };
 

@@ -84,9 +84,9 @@ class TimelineCachingTest extends TestCase
         $this->assertSame(1, $this->page()['data'][0]['commentsCount']);
         $heart = $comment->hearts()->create(['user_id' => $this->viewer->id]);
         $this->assertPageIsCached(2);
-        $this->assertSame(1, $this->page()['data'][0]['comments'][0]['heartsCount']);
+        $this->assertSame(1, $this->actingAs($this->viewer)->getJson(route('posts.comments.index', $this->post))->json('data.0.heartsCount'));
         $heart->delete();
-        $this->assertSame(0, $this->page()['data'][0]['comments'][0]['heartsCount']);
+        $this->assertSame(0, $this->actingAs($this->viewer)->getJson(route('posts.comments.index', $this->post))->json('data.0.heartsCount'));
         $comment->delete();
         $this->assertPageIsCached(2);
         $this->assertSame(0, $this->page()['data'][0]['commentsCount']);

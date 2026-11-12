@@ -18,7 +18,7 @@ class GalleryController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Gallery', [
-            'images' => $this->galleryImages->handle($request->user()),
+            'images' => Inertia::scroll(fn () => $this->galleryImages->handle($request->user(), max(1, $request->integer('page', 1))))->matchOn('data.id'),
         ]);
     }
 }
