@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Cache;
+use App\Concerns\InvalidatesTimelinePostCache;
+use App\Services\Posts\TimelineCache;
 
 /**
  * @property int $id
@@ -66,16 +67,16 @@ class Media extends Model
 {
     /** @use HasFactory<MediaFactory> */
     use HasFactory;
+    use InvalidatesTimelinePostCache;
 
     protected static function booted(): void
     {
-        static::saved(function () {
-            Cache::tags(names: 'posts')->flush();
+        static::saved(static function (self $media): void {
+            if ($media->wasRecentlyCreated || $media->wasChanged('post_id')) {
+                TimelineCache::invalidateSidebar();
+            }
         });
-
-        static::deleted(function (): void {
-            Cache::tags(names: 'posts')->flush();
-        });
+        static::deleted(static fn () => TimelineCache::invalidateSidebar());
     }
 
     public function post(): BelongsTo

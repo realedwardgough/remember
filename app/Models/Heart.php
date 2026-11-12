@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Cache;
+use App\Concerns\InvalidatesTimelinePostCache;
 
 /**
  * @property int $id
@@ -30,16 +30,7 @@ use Illuminate\Support\Facades\Cache;
 #[Fillable(['post_id', 'user_id'])]
 class Heart extends Model
 {
-    protected static function booted(): void
-    {
-        static::saved(function () {
-            Cache::tags(names: 'posts')->flush();
-        });
-
-        static::deleted(function (): void {
-            Cache::tags(names: 'posts')->flush();
-        });
-    }
+    use InvalidatesTimelinePostCache;
 
     public function post(): BelongsTo
     {

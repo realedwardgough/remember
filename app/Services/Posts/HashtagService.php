@@ -48,5 +48,6 @@ class HashtagService
         )->all();
 
         $post->tags()->sync($tagIds);
+        TimelineCache::invalidate();
     }
 }

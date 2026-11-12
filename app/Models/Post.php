@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Cache;
+use App\Services\Posts\TimelineCache;
 
 /**
  * @property int $id
@@ -68,11 +68,11 @@ class Post extends Model
     protected static function booted(): void
     {
         static::saved(function () {
-            Cache::tags(names: 'posts')->flush();
+            TimelineCache::invalidate();
         });
 
         static::deleted(function (): void {
-            Cache::tags(names: 'posts')->flush();
+            TimelineCache::invalidate();
         });
     }
 

@@ -190,6 +190,25 @@ php artisan cache:clear
 
 ### 4. Configure media storage
 
+Timeline photos and video thumbnails use a private local disk cache in
+`storage/app/media-cache`, enabled by default. Its file data is capped at 256 MiB,
+including one in-progress cached download, with a 16 MiB limit per entry. Oldest
+accessed entries are evicted as space is needed. Every HTTP request still checks
+current access, and browser revalidation avoids cloud reads for unchanged images
+and thumbnails. Replaced objects use different cache keys.
+
+Set `MEDIA_CACHE_ENABLED=false` to disable it, or adjust `MEDIA_CACHE_MAX_BYTES`
+and `MEDIA_CACHE_MAX_FILE_BYTES` (both in bytes). Cache files must stay outside
+the public web root. Each application server has its own disposable copy; the
+cache falls back to storage if unavailable. Video files and temporary message
+photos are excluded. PHP still serves these requests; this cache reduces cloud
+I/O and does not configure Nginx offloading. Keep this directory on a local disk.
+
+Feed pages remain cached for five minutes. Likes, comments and media changes
+invalidate only pages containing their post; post edits invalidate page membership
+as well. Sidebar counts, family details and tags are cached per viewer for one
+minute, with invalidation on relevant application changes.
+
 Remember stores uploaded files on the disk selected by `MEDIA_DISK`. Google Cloud Storage is the default production-oriented option.
 
 For Google Cloud Storage:

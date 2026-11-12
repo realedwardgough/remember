@@ -17,28 +17,26 @@ class GetTimelinePosts
     /** @return array<string, mixed> */
     public function handle(User $viewer, TimelineFiltersDTO $filters, int $page): array
     {
-        return Cache::tags(['posts'])->remember(
-            key: 'timeline-'.md5(serialize(['filters' => $filters->toArray(), 'page' => $page, 'viewer' => $viewer->id])),
+        $key = 'timeline-v2-'.md5(serialize(['filters' => $filters->toArray(), 'page' => $page, 'viewer' => $viewer->id]));
+        $pagination = Cache::tags(['posts'])->remember(
+            key: $key.'-ids',
             ttl: 300,
-            callback: fn (): array => $this->query($viewer, $filters, $page),
+            callback: fn (): array => $this->page($viewer, $filters, $page),
+        );
+        $ids = $pagination['data'];
+
+        return Cache::tags(['posts', ...array_map(static fn (int $id): string => 'timeline-post-'.$id, $ids)])->remember(
+            key: $key.'-content',
+            ttl: 300,
+            callback: fn (): array => [...$pagination, 'data' => $this->posts($viewer, $ids)],
         );
     }
 
     /** @return array<string, mixed> */
-    private function query(User $viewer, TimelineFiltersDTO $filters, int $page): array
+    private function page(User $viewer, TimelineFiltersDTO $filters, int $page): array
     {
-        $resourceRequest = Request::create('/');
-        $resourceRequest->setUserResolver(static fn (): User => $viewer);
-
         return Post::query()
-            ->with([
-                'author', 'media', 'tags',
-                'comments' => fn ($query) => $query->with('author')->withCount('hearts')->withExists([
-                    'hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id),
-                ]),
-            ])
-            ->withCount('hearts')
-            ->withExists(['hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id)])
+            ->select('posts.id')
             ->visibleTo($viewer)
             ->when($filters->search !== '', fn (Builder $query): Builder => $query->where(
                 fn (Builder $query) => $query->where('title', 'like', "%{$filters->search}%")->orWhere('content', 'like', "%{$filters->search}%"),
@@ -49,7 +47,32 @@ class GetTimelinePosts
             ->latest('published_at')->latest('id')
             ->paginate(perPage: 20, page: $page)
             ->appends($filters->toArray())
-            ->through(fn (Post $post): array => TimelineResource::make($post)->toArray($resourceRequest))
+            ->through(static fn (Post $post): int => $post->id)
             ->toArray();
+    }
+
+    /** @param list<int> $ids
+     * @return list<array<string, mixed>>
+     */
+    private function posts(User $viewer, array $ids): array
+    {
+        $resourceRequest = Request::create('/');
+        $resourceRequest->setUserResolver(static fn (): User => $viewer);
+
+        $posts = Post::query()
+            ->with([
+                'author', 'media', 'tags',
+                'comments' => fn ($query) => $query->with('author')->withCount('hearts')->withExists([
+                    'hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id),
+                ]),
+            ])
+            ->withCount('hearts')
+            ->withExists(['hearts as hearted_by_viewer' => fn (Builder $query): Builder => $query->where('user_id', $viewer->id)])
+            ->visibleTo($viewer)
+            ->whereKey($ids)->get()->keyBy('id');
+
+        return collect($ids)->filter(fn (int $id): bool => $posts->has($id))
+            ->map(fn (int $id): array => TimelineResource::make($posts[$id])->toArray($resourceRequest))
+            ->values()->all();
     }
 }

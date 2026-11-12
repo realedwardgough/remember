@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Post;
 use App\Observers\SharedPostObserver;
 use App\Observers\MessagingUserObserver;
+use App\Services\Posts\TimelineCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         User::observe(MessagingUserObserver::class);
         User::observe(\App\Observers\UserSettingsObserver::class);
+        User::saved(static function (User $user): void {
+            if ($user->wasRecentlyCreated || $user->wasChanged(['name', 'username', 'photo'])) {
+                TimelineCache::invalidate();
+            }
+        });
+        User::deleted(static fn () => TimelineCache::invalidate());
         Post::observe(SharedPostObserver::class);
         Post::observe(\App\Observers\PostNotificationObserver::class);
     }

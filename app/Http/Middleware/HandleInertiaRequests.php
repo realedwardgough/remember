@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Enum\TimelinePostType;
-use App\Models\Media;
-use App\Models\Post;
-use App\Models\Tag;
 use App\Models\Timeline;
-use App\Models\User;
+use App\Queries\GetSidebarData;
 use App\Queries\GetUnreadMessageCount;
 use App\Queries\GetUnreadNotificationCount;
 use App\Services\Messaging\MessageImageSettings;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,6 +25,11 @@ class HandleInertiaRequests extends Middleware
     /** @return array<string, mixed> */
     public function share(Request $request): array
     {
+        $sidebar = null;
+        $sidebarData = function () use ($request, &$sidebar): array {
+            return $sidebar ??= app(GetSidebarData::class)->handle($request->user());
+        };
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -58,27 +59,11 @@ class HandleInertiaRequests extends Middleware
                 static fn (TimelinePostType $type): string => $type->value,
                 TimelinePostType::cases(),
             ),
-            'tags' => fn (): array => $request->user()
-                ? Tag::query()
-                    ->whereHas(
-                        relation: 'posts',
-                        callback: fn (Builder $query): Builder => $query->visibleTo($request->user()),
-                    )
-                    ->orderBy('name')
-                    ->pluck('name')
-                    ->all()
-                : [],
-            'family' => fn (): array => $request->user() ? $this->family() : [],
-            'family_count' => fn (): int => $request->user() ? User::query()->count() : 0,
-            'media_count' => fn (): int => $request->user()
-                ? Media::query()
-                    ->whereHas(
-                        relation: 'post',
-                        callback: fn (Builder $query): Builder => $query->visibleTo($request->user()),
-                    )
-                    ->count()
-                : 0,
-            'memories_count' => fn (): int => $request->user() ? Post::query()->visibleTo($request->user())->count() : 0,
+            'tags' => fn (): array => $request->user() ? $sidebarData()['tags'] : [],
+            'family' => fn (): array => $request->user() ? $sidebarData()['family'] : [],
+            'family_count' => fn (): int => $request->user() ? $sidebarData()['family_count'] : 0,
+            'media_count' => fn (): int => $request->user() ? $sidebarData()['media_count'] : 0,
+            'memories_count' => fn (): int => $request->user() ? $sidebarData()['memories_count'] : 0,
         ];
     }
 
@@ -106,24 +91,4 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    /** @return array<string, array{name: string, username: string, photo: string}> */
-    private function family(): array
-    {
-        return User::query()
-            ->orderBy('name')
-            ->limit(5)
-            ->get()
-            ->mapWithKeys(function (User $user): array {
-                $firstName = str($user->name)->before(' ')->value() ?: 'Family Member';
-
-                return [
-                    $firstName => [
-                        'name' => $user->name,
-                        'username' => '@'.$user->username,
-                        'photo' => $user->photo ?? '',
-                    ],
-                ];
-            })
-            ->toArray();
-    }
 }

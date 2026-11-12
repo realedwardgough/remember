@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Cache;
+use App\Services\Posts\TimelineCache;
 
 /**
  * @property int $id
@@ -32,13 +32,16 @@ class CommentHeart extends Model
 {
     protected static function booted(): void
     {
-        static::saved(function (): void {
-            Cache::tags(names: 'posts')->flush();
-        });
-
-        static::deleted(function (): void {
-            Cache::tags(names: 'posts')->flush();
-        });
+        $invalidate = static function (self $heart): void {
+            $ids = Comment::query()->whereKey(array_filter([
+                $heart->comment_id, $heart->getOriginal('comment_id'),
+            ]))->pluck('post_id');
+            foreach ($ids->unique() as $id) {
+                TimelineCache::invalidate((int) $id);
+            }
+        };
+        static::saved($invalidate);
+        static::deleted($invalidate);
     }
 
     public function comment(): BelongsTo

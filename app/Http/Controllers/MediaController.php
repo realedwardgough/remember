@@ -6,10 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Media;
 use App\Http\Resources\MediaResource;
+use App\Services\Posts\LocalMediaCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaController extends Controller
@@ -23,6 +25,12 @@ class MediaController extends Controller
             return $this->video($request, $media);
         }
 
+        return $this->cachedMedia($request, $media, $media->path, $media->mime_type, $media->size);
+    }
+
+    private function cachedMedia(Request $request, Media $media, string $path, string $mimeType, ?int $size = null): Response|StreamedResponse
+    {
+
         // Recheck access before validating a browser's cached copy. Unchanged
         // media can then be reused without contacting cloud storage at all.
         $cached = response('', 200, [
@@ -31,9 +39,9 @@ class MediaController extends Controller
             $request->user()->id,
             $media->id,
             $media->disk,
-            $media->path,
-            $media->size,
-            $media->mime_type,
+            $path,
+            $size,
+            $mimeType,
             $media->updated_at?->toISOString(),
         ], JSON_THROW_ON_ERROR)), weak: true);
         $cached->setLastModified($media->updated_at);
@@ -42,15 +50,24 @@ class MediaController extends Controller
             return $cached;
         }
 
-        return Storage::disk($media->disk)->response(
-            path: $media->path,
-            name: $media->original_name,
-            headers: [
-                ...$cached->headers->all(),
-                'Content-Type' => $media->mime_type,
-                'Content-Length' => $media->size,
-            ],
-        );
+        $headers = [...$cached->headers->all(), 'Content-Type' => $mimeType, 'X-Content-Type-Options' => 'nosniff'];
+        $name = $path === $media->path ? ($media->original_name ?? basename($path)) : basename($path);
+        $headers['Content-Disposition'] = $cached->headers->makeDisposition('inline', $name, str_replace('%', '', Str::ascii($name)));
+        if ($size !== null) {
+            $headers['Content-Length'] = $size;
+        }
+        if ($request->isMethod('HEAD')) {
+            return response('', 200, $headers);
+        }
+
+        return response()->stream(function () use ($media, $path, $size): void {
+            $stream = app(LocalMediaCache::class)->readStream($media, $path, $size);
+            try {
+                fpassthru($stream);
+            } finally {
+                fclose($stream);
+            }
+        }, 200, $headers);
     }
 
     public function download(Request $request, Media $media): StreamedResponse
@@ -66,16 +83,12 @@ class MediaController extends Controller
         );
     }
 
-    public function thumbnail(Request $request, Media $media): StreamedResponse
+    public function thumbnail(Request $request, Media $media): Response|StreamedResponse
     {
         $this->authorizeMedia($request, $media);
         abort_unless($media->isVideo() && $media->thumbnail_path !== null, 404);
 
-        return Storage::disk($media->disk)->response($media->thumbnail_path, headers: [
-            'Content-Type' => 'image/jpeg',
-            'Cache-Control' => 'private, no-store',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->cachedMedia($request, $media, $media->thumbnail_path, 'image/jpeg');
     }
 
     public function status(Request $request, Media $media): JsonResponse
