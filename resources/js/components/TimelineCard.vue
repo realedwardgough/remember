@@ -80,7 +80,9 @@
                 >
                     <LockKeyhole :size="13" />Only you can read this letter
                 </p>
-                <h2 class="story-font text-2xl leading-snug break-words">
+                <h2
+                    class="story-font text-base leading-snug break-words max-lg:font-sans max-lg:font-bold max-lg:tracking-normal lg:text-2xl"
+                >
                     {{ post.title }}
                 </h2>
                 <p

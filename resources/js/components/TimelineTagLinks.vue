@@ -1,18 +1,18 @@
 <template>
     <div
         v-if="tags.length"
-        class="flex flex-wrap gap-1.5"
+        class="flex flex-wrap gap-x-3 gap-y-1 lg:gap-1.5"
         :class="spacingClass"
     >
         <Link
             v-for="tag in tags"
             :key="tag"
             :href="home({ query: queryForTag(tag) })"
-            class="inline-flex min-h-11 items-center rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold transition-[background-color,translate]"
+            class="inline-flex min-h-6 items-center py-0.5 text-xs font-semibold text-primary transition-[background-color,translate] lg:min-h-11 lg:rounded-xl lg:border lg:border-stone-200 lg:px-3 lg:py-2"
             :class="
                 activeTag === cleanTag(tag)
-                    ? 'bg-primary text-white'
-                    : 'bg-lilac text-primary hover:bg-butter'
+                    ? 'underline underline-offset-2 lg:bg-primary lg:text-white lg:no-underline'
+                    : 'hover:underline lg:bg-lilac lg:hover:bg-butter lg:hover:no-underline'
             "
         >
             {{ tag }}
@@ -32,7 +32,7 @@ withDefaults(
         spacingClass?: string;
     }>(),
     {
-        spacingClass: 'mt-3',
+        spacingClass: 'mt-1 lg:mt-3',
     },
 );
 
